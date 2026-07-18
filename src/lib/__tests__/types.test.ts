@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
 import {
   compareBrandsByName,
+  countReviews,
   formatBrandName,
   getConfirmedBrandRecipes,
   getListedFlours,
@@ -15,6 +15,7 @@ import {
   type RecipeFlour,
   type Review,
 } from "@/lib/types";
+import { describe, expect, it } from "vitest";
 
 function makeBrandRecipe(overrides: Partial<BrandRecipe> = {}): BrandRecipe {
   return {
@@ -192,6 +193,24 @@ describe("hasBakedReview", () => {
 
   it("銘柄が未紐付け（floursが空）ならfalse", () => {
     expect(hasBakedReview(makeRecipe([]))).toBe(false);
+  });
+});
+
+describe("countReviews", () => {
+  it("全銘柄の感想数を合算する", () => {
+    const recipe = makeRecipe([
+      makeFlour({ reviews: [makeReview(), makeReview({ id: "review-2" })] }),
+      makeFlour({ reviews: [makeReview({ id: "review-3" })] }),
+    ]);
+    expect(countReviews(recipe)).toBe(3);
+  });
+
+  it("感想がなければ0", () => {
+    expect(countReviews(makeRecipe([makeFlour()]))).toBe(0);
+  });
+
+  it("銘柄が未紐付け（floursが空）なら0", () => {
+    expect(countReviews(makeRecipe([]))).toBe(0);
   });
 });
 

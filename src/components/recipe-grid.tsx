@@ -9,8 +9,9 @@ export function RecipeGrid({ recipes }: { recipes: Recipe[] }) {
       </p>
     );
   }
+  // タイル形式だと項目を上下に見比べられないため、縦1列のリスト形式で並べる（issue #64）
   return (
-    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="flex flex-col gap-3">
       {recipes.map((recipe) => (
         <li key={recipe.id}>
           <RecipeCard recipe={recipe} />

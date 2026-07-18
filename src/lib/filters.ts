@@ -16,6 +16,8 @@ export type RecipeFilterCondition = {
   /** パン種別名。空文字は「すべて」 */
   breadType: string;
   glutenFreeOnly: boolean;
+  /** サイリウム不使用（uses_psylliumがfalse）のみ。null（未確認）は含めない */
+  psylliumFreeOnly: boolean;
 };
 
 export function matchesRecipeFilter(
@@ -32,6 +34,7 @@ export function matchesRecipeFilter(
     return false;
   }
   if (cond.glutenFreeOnly && !isGlutenFree(recipe)) return false;
+  if (cond.psylliumFreeOnly && recipe.uses_psyllium !== false) return false;
   return true;
 }
 

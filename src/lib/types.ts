@@ -180,6 +180,11 @@ export function hasBakedReview(recipe: Pick<Recipe, "flours">): boolean {
   return recipe.flours.some((f) => f.reviews.length > 0);
 }
 
+/** レシピに紐づく感想（全銘柄分）の合計件数。一覧の「感想 n件」表示に使う */
+export function countReviews(recipe: Pick<Recipe, "flours">): number {
+  return recipe.flours.reduce((sum, f) => sum + f.reviews.length, 0);
+}
+
 /**
  * レシピに記載のある米粉（銘柄指定あり・目視で確認可能）だけを返す。
  * 「銘柄指定なし」はレシピ側の情報ではなく感想側の実績なので、
