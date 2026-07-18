@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { BrandFilters } from "@/components/brand-filters";
-import { BrandGrid } from "@/components/brand-grid";
+import { BrandList } from "@/components/brand-list";
 import { JsonLd } from "@/components/json-ld";
-import { getFlourBrands } from "@/lib/data";
+import { getBrandReviewCounts, getFlourBrands } from "@/lib/data";
 import { buildPageMetadata } from "@/lib/metadata";
 import { buildItemListSchema } from "@/lib/structured-data";
 import { formatBrandName } from "@/lib/types";
@@ -17,7 +17,10 @@ export const metadata = buildPageMetadata({
 });
 
 export default async function BrandsPage() {
-  const brands = await getFlourBrands();
+  const [brands, reviewCounts] = await Promise.all([
+    getFlourBrands(),
+    getBrandReviewCounts(),
+  ]);
 
   return (
     <div>
@@ -35,8 +38,10 @@ export default async function BrandsPage() {
         銘柄ごとの成分情報と、その銘柄で作れるレシピの逆引きを掲載しています。
       </p>
       <div className="mt-6">
-        <Suspense fallback={<BrandGrid brands={brands} />}>
-          <BrandFilters brands={brands} />
+        <Suspense
+          fallback={<BrandList brands={brands} reviewCounts={reviewCounts} />}
+        >
+          <BrandFilters brands={brands} reviewCounts={reviewCounts} />
         </Suspense>
       </div>
     </div>
