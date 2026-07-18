@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { buildPageMetadata } from "@/lib/metadata";
 import { notFound } from "next/navigation";
+import { BakedBadge } from "@/components/baked-badge";
 import { BrandChips } from "@/components/brand-card";
 import { BrandImage } from "@/components/brand-image";
 import { JsonLd } from "@/components/json-ld";
-import { VerificationBadge } from "@/components/verification-badge";
+import { LinkStatusBadge } from "@/components/link-status-badge";
 import {
   buildBrandProductSchema,
   buildBreadcrumbSchema,
@@ -168,7 +169,7 @@ export default async function BrandDetailPage({ params }: Props) {
           </p>
         ) : (
           <ul className="mt-4 space-y-3">
-            {brandRecipes.map(({ recipe, verification_status, result_memo }) => (
+            {brandRecipes.map(({ recipe, link_status, result_memo, reviews }) => (
               <li key={recipe!.id}>
                 <Link
                   href={`/recipes/${recipe!.id}`}
@@ -180,7 +181,8 @@ export default async function BrandDetailPage({ params }: Props) {
                         {recipe!.bread_type.name}
                       </span>
                     )}
-                    <VerificationBadge status={verification_status} />
+                    <LinkStatusBadge status={link_status} />
+                    {reviews.length > 0 && <BakedBadge />}
                   </div>
                   <h3 className="mt-2 font-semibold leading-snug text-stone-900">
                     {recipe!.title}

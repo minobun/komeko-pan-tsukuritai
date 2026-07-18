@@ -131,7 +131,7 @@ describe("getRecipesByBrandId", () => {
 
   it("公開中のレシピだけを新しい順に返す", async () => {
     const older = {
-      verification_status: "baked",
+      link_status: "brand_specified",
       result_memo: null,
       recipe: {
         id: "r-old",
@@ -141,7 +141,7 @@ describe("getRecipesByBrandId", () => {
       },
     };
     const newer = {
-      verification_status: "visual",
+      link_status: "visually_identified",
       result_memo: null,
       recipe: {
         id: "r-new",
@@ -151,7 +151,7 @@ describe("getRecipesByBrandId", () => {
       },
     };
     const draft = {
-      verification_status: "baked",
+      link_status: "brand_specified",
       result_memo: null,
       recipe: {
         id: "r-draft",
@@ -160,7 +160,7 @@ describe("getRecipesByBrandId", () => {
         created_at: "2026-07-01T00:00:00Z",
       },
     };
-    const orphan = { verification_status: "baked", result_memo: null, recipe: null };
+    const orphan = { link_status: "brand_specified", result_memo: null, recipe: null };
     stubQuery({ data: [older, draft, newer, orphan], error: null });
 
     const result = await getRecipesByBrandId(VALID_UUID);

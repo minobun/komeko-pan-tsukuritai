@@ -1,14 +1,28 @@
 import { describe, expect, it } from "vitest";
 import {
   getRecipeIngredientUsages,
+  hasBakedReview,
   isGlutenFree,
   type Recipe,
   type RecipeFlour,
+  type Review,
 } from "@/lib/types";
+
+function makeReview(overrides: Partial<Review> = {}): Review {
+  return {
+    id: "review-1",
+    body: "もちもちに焼けた",
+    flour_tips: null,
+    author_name: "運営者",
+    author_type: "operator",
+    created_at: "2026-01-01T00:00:00Z",
+    ...overrides,
+  };
+}
 
 function makeFlour(overrides: Partial<RecipeFlour> = {}): RecipeFlour {
   return {
-    verification_status: "baked",
+    link_status: "brand_specified",
     result_memo: null,
     brand: {
       id: "brand-1",
@@ -75,6 +89,33 @@ describe("isGlutenFree", () => {
   it("brandがnullの行が含まれる場合は判定不能としてfalse", () => {
     const recipe = makeRecipe([makeFlour(), makeFlour({ brand: null })]);
     expect(isGlutenFree(recipe)).toBe(false);
+  });
+});
+
+describe("hasBakedReview", () => {
+  it("感想が1件でもあれば実食済みとしてtrue", () => {
+    const recipe = makeRecipe([makeFlour({ reviews: [makeReview()] })]);
+    expect(hasBakedReview(recipe)).toBe(true);
+  });
+
+  it("複数銘柄のうち1つにだけ感想があってもtrue", () => {
+    const recipe = makeRecipe([
+      makeFlour(),
+      makeFlour({ reviews: [makeReview()] }),
+    ]);
+    expect(hasBakedReview(recipe)).toBe(true);
+  });
+
+  it("感想が1件もなければfalse（紐付けステータスは実食の根拠にしない）", () => {
+    const recipe = makeRecipe([
+      makeFlour({ link_status: "brand_unspecified" }),
+      makeFlour({ link_status: "visually_identified" }),
+    ]);
+    expect(hasBakedReview(recipe)).toBe(false);
+  });
+
+  it("銘柄が未紐付け（floursが空）ならfalse", () => {
+    expect(hasBakedReview(makeRecipe([]))).toBe(false);
   });
 });
 

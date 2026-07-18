@@ -24,7 +24,17 @@ export type FlourBrand = {
   created_at: string;
 };
 
-export type VerificationStatus = "baked" | "visual";
+/**
+ * レシピ×米粉の紐付け根拠（spec §4.4）。
+ * 「実食したか」は紐付けの根拠ではなく感想側の情報なので、ここには含めない（{@link hasBakedReview}）。
+ */
+export type LinkStatus =
+  /** レシピ本文中に銘柄の指定が明記されている */
+  | "brand_specified"
+  /** レシピに銘柄の記載はないが、その米粉で作った実績（感想）がある */
+  | "brand_unspecified"
+  /** レシピの写真・動画等から銘柄が目視で確認できる */
+  | "visually_identified";
 
 export type ResultTag = {
   id: string;
@@ -45,7 +55,7 @@ export type Review = {
 
 /** レシピに埋め込まれる使用銘柄（recipe_flour_map 経由） */
 export type RecipeFlour = {
-  verification_status: VerificationStatus;
+  link_status: LinkStatus;
   result_memo: string | null;
   brand: Pick<
     FlourBrand,
@@ -80,7 +90,7 @@ export type Recipe = {
 
 /** 銘柄詳細ページの逆引きレシピ（recipe_flour_map 起点） */
 export type BrandRecipe = {
-  verification_status: VerificationStatus;
+  link_status: LinkStatus;
   result_memo: string | null;
   reviews: Review[];
   recipe: {
@@ -124,6 +134,14 @@ export function getRecipeIngredientUsages(
       usage: value === null ? "unknown" : value ? "used" : "unused",
     };
   });
+}
+
+/**
+ * 実食したかどうかは感想（reviews）の有無で表す（spec §4.4/§4.6）。
+ * 紐付けステータスは根拠の種類しか表さないので、実食の判定には使わない。
+ */
+export function hasBakedReview(recipe: Pick<Recipe, "flours">): boolean {
+  return recipe.flours.some((f) => f.reviews.length > 0);
 }
 
 /**

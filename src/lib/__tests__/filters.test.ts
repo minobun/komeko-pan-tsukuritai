@@ -10,7 +10,7 @@ function makeFlour(
   brand: Partial<NonNullable<RecipeFlour["brand"]>> = {},
 ): RecipeFlour {
   return {
-    verification_status: "baked",
+    link_status: "brand_specified",
     result_memo: null,
     brand: {
       id: "brand-1",
@@ -88,7 +88,7 @@ describe("filterRecipes", () => {
     const recipe = makeRecipe({
       flours: [
         {
-          verification_status: "baked",
+          link_status: "brand_specified",
           result_memo: null,
           brand: null,
           tags: [],
