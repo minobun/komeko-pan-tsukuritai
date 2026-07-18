@@ -47,8 +47,14 @@
 | author_name     | text        | レシピ著作者名（attribution として表示）                 |
 | bread_type_id   | uuid        | FK → bread_types                                         |
 | memo            | text        | 補足メモ（食感・失敗しやすいポイント等）                 |
+| uses_psyllium   | boolean     | サイリウムを使うか（null = 未確認）                      |
+| uses_gluten     | boolean     | グルテンを使うか（null = 未確認）                        |
+| uses_oil        | boolean     | 油を使うか（null = 未確認）                              |
 | status          | text        | `published` / `link_broken` / `hidden`（削除依頼対応等） |
 | last_checked_at | timestamptz | リンク死活チェックの最終実行日時                         |
+
+- サイリウム・グルテンは米粉自体ではなくレシピ側で加えるかが決まる情報のため、`flour_brands.has_gluten` / `has_psyllium`（銘柄自体の成分）とは別に持つ。油はレシピ側のみ。
+- 3項目とも nullable とし、`null` を「未確認」として表示する（既存レシピは全項目が未確認から始まる）。
 
 ## 4.2 bread_types（パン種別マスタ）※新設
 | カラム     | 型   | 説明                                  |

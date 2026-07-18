@@ -11,7 +11,8 @@ const UUID_RE =
 const REVIEW_SELECT = `reviews:reviews(id, body, flour_tips, author_name, author_type, created_at)`;
 
 const RECIPE_SELECT = `
-  id, title, url, site_name, author_name, memo, created_at,
+  id, title, url, site_name, author_name, memo,
+  uses_psyllium, uses_gluten, uses_oil, created_at,
   bread_type:bread_types(id, name),
   flours:recipe_flour_map(
     verification_status, result_memo,
