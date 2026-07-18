@@ -10,6 +10,7 @@ npm run dev
 ```
 
 仕様は `docs/mvp/spec.md`、タスク分解は `docs/mvp/wbs.md` を参照。
+システム構成図・ディレクトリ構成は [docs/architecture.md](docs/architecture.md) を参照。
 
 ## リンク死活チェック（WBS 6.4）
 
