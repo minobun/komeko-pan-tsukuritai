@@ -7,7 +7,7 @@ import { buildPageMetadata } from "@/lib/metadata";
 import { buildItemListSchema } from "@/lib/structured-data";
 import { formatBrandName } from "@/lib/types";
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 export const metadata = buildPageMetadata({
   title: "米粉パン用の米粉銘柄一覧｜成分で比較",

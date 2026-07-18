@@ -5,8 +5,8 @@ import { RecipeCard } from "@/components/recipe-card";
 import { getFeaturedBrands, getLatestRecipes } from "@/lib/data";
 import { buildWebSiteSchema } from "@/lib/structured-data";
 
-// ISR: ビルド時＋1時間ごと（または手動revalidate）にのみDBへアクセスする
-export const revalidate = 3600;
+// ISR: ビルド時＋5分ごと（または手動revalidate）にのみDBへアクセスする
+export const revalidate = 300;
 
 function SectionHeading({
   title,
@@ -39,13 +39,14 @@ export default async function Home() {
   return (
     <div className="space-y-12">
       <JsonLd data={buildWebSiteSchema()} />
-      <section className="rounded-xl bg-amber-800 px-6 py-10 text-amber-50 sm:px-10">
+      {/* 文字色は背景 amber-900 に対し WCAG AA（4.5:1）以上を維持する（issue #63） */}
+      <section className="rounded-xl bg-amber-900 px-6 py-10 text-white sm:px-10">
         <h1 className="text-2xl font-bold leading-snug sm:text-3xl">
           米粉パンのレシピを、
           <br className="sm:hidden" />
           「米粉の銘柄」から探せるサイト
         </h1>
-        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-amber-100 sm:text-base">
+        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-amber-50 sm:text-base">
           米粉はメーカー・銘柄によって吸水率などの性質が異なり、同じレシピでも仕上がりが変わります。レシピで指定された銘柄が手に入らないこともあります。
           当サイトは、レシピと「実際に使われている米粉銘柄」の紐付けを運営者の独自調査（レシピ内の目視確認）でまとめています。
           家にある米粉から作れるレシピを逆引きすることもできます。
@@ -59,7 +60,7 @@ export default async function Home() {
           </Link>
           <Link
             href="/brands"
-            className="rounded-full border border-amber-200 px-5 py-2 text-sm font-semibold text-amber-50 transition-colors hover:bg-amber-700"
+            className="rounded-full border border-amber-200 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-800"
           >
             米粉銘柄から探す
           </Link>
