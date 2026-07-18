@@ -65,7 +65,12 @@ function makeBrand(overrides: Partial<FlourBrand> = {}): FlourBrand {
   };
 }
 
-const noFilter = { maker: "", breadType: "", glutenFreeOnly: false };
+const noFilter = {
+  maker: "",
+  breadType: "",
+  glutenFreeOnly: false,
+  psylliumFreeOnly: false,
+};
 
 describe("filterRecipes", () => {
   it("条件がすべて空なら全件返す", () => {
@@ -124,6 +129,18 @@ describe("filterRecipes", () => {
     ).toEqual([glutenFree]);
   });
 
+  it("サイリウムなし指定でuses_psylliumがfalseのレシピだけ残す", () => {
+    const without = makeRecipe({ id: "recipe-2", uses_psyllium: false });
+    const withPsyllium = makeRecipe({ id: "recipe-3", uses_psyllium: true });
+    const unknown = makeRecipe(); // uses_psyllium: null（未確認）は含めない
+    expect(
+      filterRecipes([without, withPsyllium, unknown], {
+        ...noFilter,
+        psylliumFreeOnly: true,
+      }),
+    ).toEqual([without]);
+  });
+
   it("複数条件はAND（すべて満たすレシピのみ残る）", () => {
     const match = makeRecipe({
       id: "recipe-2",
@@ -139,6 +156,7 @@ describe("filterRecipes", () => {
         maker: "波里",
         breadType: "食パン",
         glutenFreeOnly: true,
+        psylliumFreeOnly: false,
       }),
     ).toEqual([match]);
   });
