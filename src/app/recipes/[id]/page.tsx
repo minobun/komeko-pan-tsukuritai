@@ -1,16 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BakedBadge } from "@/components/baked-badge";
 import { IngredientUsageList } from "@/components/ingredient-usage-list";
 import { JsonLd } from "@/components/json-ld";
-import { VerificationBadge } from "@/components/verification-badge";
+import { LinkStatusBadge } from "@/components/link-status-badge";
 import { getRecipeById, getRecipes } from "@/lib/data";
 import { buildPageMetadata } from "@/lib/metadata";
 import {
   buildBreadcrumbSchema,
   buildRecipeBrandListSchema,
 } from "@/lib/structured-data";
-import { getRecipeIngredientUsages, isGlutenFree } from "@/lib/types";
+import {
+  getRecipeIngredientUsages,
+  hasBakedReview,
+  isGlutenFree,
+} from "@/lib/types";
 
 export const revalidate = 3600;
 
@@ -32,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .flatMap((f) => (f.brand ? [f.brand.product_name] : []))
     .join("・");
   const breadType = recipe.bread_type?.name;
-  const hasBaked = recipe.flours.some((f) => f.verification_status === "baked");
+  const hasBaked = hasBakedReview(recipe);
 
   return buildPageMetadata({
     title: brandNames
@@ -151,7 +156,8 @@ export default async function RecipeDetailPage({ params }: Props) {
                         銘柄情報なし
                       </span>
                     )}
-                    <VerificationBadge status={flour.verification_status} />
+                    <LinkStatusBadge status={flour.link_status} />
+                    {flour.reviews.length > 0 && <BakedBadge />}
                     {flour.brand?.is_discontinued && (
                       <span className="rounded-full border border-red-200 bg-white px-2 py-0.5 text-xs font-medium text-red-600">
                         廃番

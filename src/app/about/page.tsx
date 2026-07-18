@@ -1,4 +1,5 @@
-import { VerificationBadge } from "@/components/verification-badge";
+import { BakedBadge } from "@/components/baked-badge";
+import { LinkStatusBadge } from "@/components/link-status-badge";
 import { buildPageMetadata } from "@/lib/metadata";
 import { CONTACT_FORM_URL, SITE_NAME } from "@/lib/site";
 
@@ -32,15 +33,25 @@ export default function AboutPage() {
             レシピ本文・写真は転載していません。掲載しているのは外部レシピへのリンクと、著作者名・掲載サイト名、および運営者による独自調査の情報（使用銘柄・実食メモ）のみです。
           </li>
           <li>
-            レシピと銘柄の紐付けには検証レベルを明示しています。
+            レシピと銘柄の紐付けには、その根拠を明示しています。
             <span className="mx-1 inline-flex align-middle">
-              <VerificationBadge status="baked" />
+              <LinkStatusBadge status="brand_specified" />
             </span>
-            は運営者が実際にその銘柄で焼いて確認したもの、
+            はレシピ本文に銘柄の指定が明記されているもの、
             <span className="mx-1 inline-flex align-middle">
-              <VerificationBadge status="visual" />
+              <LinkStatusBadge status="visually_identified" />
             </span>
-            はレシピの材料欄を目視で確認したものです。
+            はレシピの写真・動画等から銘柄が目視で確認できるもの、
+            <span className="mx-1 inline-flex align-middle">
+              <LinkStatusBadge status="brand_unspecified" />
+            </span>
+            はレシピに銘柄の記載はないものの、運営者がその米粉で作った実績があるものです。
+          </li>
+          <li>
+            <span className="mr-1 inline-flex align-middle">
+              <BakedBadge />
+            </span>
+            は運営者が実際にその銘柄で焼いて確認し、感想を掲載しているものです。
           </li>
           <li>
             メーカー名・商品名は事実の参照として記載しており、各メーカーとの提携・公認関係はありません。

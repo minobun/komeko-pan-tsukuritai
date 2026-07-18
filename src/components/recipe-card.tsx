@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { isGlutenFree, type Recipe } from "@/lib/types";
-import { VerificationBadge } from "./verification-badge";
+import { hasBakedReview, isGlutenFree, type Recipe } from "@/lib/types";
+import { BakedBadge } from "./baked-badge";
 
 export function RecipeCard({ recipe }: { recipe: Recipe }) {
-  const hasBaked = recipe.flours.some((f) => f.verification_status === "baked");
   const brands = recipe.flours.flatMap((f) => (f.brand ? [f.brand] : []));
 
   return (
@@ -22,9 +21,8 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
             グルテンフリー
           </span>
         )}
-        {recipe.flours.length > 0 && (
-          <VerificationBadge status={hasBaked ? "baked" : "visual"} />
-        )}
+        {/* 紐付けステータスは銘柄ごとの情報なので、一覧では実食の有無だけを示す */}
+        {hasBakedReview(recipe) && <BakedBadge />}
       </div>
       <h3 className="mt-2 font-semibold leading-snug text-stone-900">
         {recipe.title}

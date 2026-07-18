@@ -15,7 +15,7 @@ const RECIPE_SELECT = `
   uses_psyllium, uses_gluten, uses_oil, created_at,
   bread_type:bread_types(id, name),
   flours:recipe_flour_map(
-    verification_status, result_memo,
+    link_status, result_memo,
     brand:flour_brands(id, maker_name, product_name, has_gluten, has_psyllium, is_discontinued),
     tags:recipe_flour_result_tags(tag:result_tags(id, name)),
     ${REVIEW_SELECT}
@@ -139,7 +139,7 @@ export async function getRecipesByBrandId(
       .from("recipe_flour_map")
       .select(
         `
-        verification_status, result_memo,
+        link_status, result_memo,
         ${REVIEW_SELECT},
         recipe:recipes(
           id, title, site_name, author_name, status, created_at,
