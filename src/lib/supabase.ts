@@ -6,7 +6,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  * Supabase Freeの休止対策として、閲覧リクエストが直接DBに到達しない構成にする
  * （docs/mvp/spec.md §6）。
  */
-export const REVALIDATE_SECONDS = 3600;
+export const REVALIDATE_SECONDS = 300;
 
 /** 手動再検証（revalidateTag）用のキャッシュタグ */
 export const SUPABASE_CACHE_TAG = "supabase";

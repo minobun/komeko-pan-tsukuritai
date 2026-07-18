@@ -6,7 +6,7 @@ import { getBreadTypes, getRecipes } from "@/lib/data";
 import { buildPageMetadata } from "@/lib/metadata";
 import { buildItemListSchema } from "@/lib/structured-data";
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 export const metadata = buildPageMetadata({
   title: "米粉パンレシピ一覧｜使用米粉の銘柄つき",

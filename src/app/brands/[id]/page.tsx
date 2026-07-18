@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { buildPageMetadata } from "@/lib/metadata";
 import { notFound } from "next/navigation";
-import { BakedBadge } from "@/components/baked-badge";
 import { BrandChips } from "@/components/brand-card";
 import { BrandImage } from "@/components/brand-image";
+import { BrandRecipeCard } from "@/components/brand-recipe-card";
+import { BrandRecipeList } from "@/components/brand-recipe-list";
 import { JsonLd } from "@/components/json-ld";
-import { LinkStatusBadge } from "@/components/link-status-badge";
 import {
   buildBrandProductSchema,
   buildBreadcrumbSchema,
@@ -16,9 +16,14 @@ import {
   getFlourBrands,
   getRecipesByBrandId,
 } from "@/lib/data";
-import { formatBrandName, getMakerName } from "@/lib/types";
+import {
+  formatBrandName,
+  getConfirmedBrandRecipes,
+  getMakerName,
+  getPossibleBrandRecipes,
+} from "@/lib/types";
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -36,10 +41,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!brand) return { title: "銘柄が見つかりません", robots: { index: false } };
 
   const name = formatBrandName(brand);
+  // 件数・パン種別は「作れるレシピ」（レシピ側に根拠がある紐付け）だけで数える
+  const confirmed = getConfirmedBrandRecipes(brandRecipes);
   // 「銘柄名×パン種別」での検索流入を狙い、逆引きレシピのパン種別をtitleに含める
   const breadTypes = Array.from(
     new Set(
-      brandRecipes.flatMap((r) =>
+      confirmed.flatMap((r) =>
         r.recipe?.bread_type ? [r.recipe.bread_type.name] : [],
       ),
     ),
@@ -48,11 +55,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return buildPageMetadata({
     title: breadTypeLabel
-      ? `${name}で作る米粉パン（${breadTypeLabel}）｜成分とレシピ${brandRecipes.length}件`
+      ? `${name}で作る米粉パン（${breadTypeLabel}）｜成分とレシピ${confirmed.length}件`
       : `${name}｜成分と作れる米粉パンレシピ`,
     description:
       brand.note?.slice(0, 120) ??
-      `${name}の成分情報（製パン用グルテン・サイリウムの有無）と、この米粉で作れる米粉パンレシピ${brandRecipes.length}件の逆引き一覧。`,
+      `${name}の成分情報（製パン用グルテン・サイリウムの有無）と、この米粉で作れる米粉パンレシピ${confirmed.length}件の逆引き一覧。`,
     path: `/brands/${brand.id}`,
     type: "article",
   });
@@ -65,6 +72,9 @@ export default async function BrandDetailPage({ params }: Props) {
     getRecipesByBrandId(id),
   ]);
   if (!brand) notFound();
+
+  const confirmedRecipes = getConfirmedBrandRecipes(brandRecipes);
+  const possibleRecipes = getPossibleBrandRecipes(brandRecipes);
 
   return (
     <article>
@@ -162,46 +172,34 @@ export default async function BrandDetailPage({ params }: Props) {
 
       <section className="mt-10">
         <h2 className="text-lg font-bold text-stone-900">
-          {brand.product_name}で作れるレシピ（{brandRecipes.length}件）
+          {brand.product_name}で作れるレシピ（{confirmedRecipes.length}件）
         </h2>
-        {brandRecipes.length === 0 ? (
-          <p className="mt-3 text-sm text-stone-500">
-            この銘柄を使うレシピはまだ登録されていません。
+        <p className="mt-1 text-xs text-stone-500">
+          レシピ本文に銘柄の指定があるもの、または写真・動画から銘柄を目視で確認できたものです。
+        </p>
+        <BrandRecipeList rows={confirmedRecipes} />
+      </section>
+
+      {/* レシピに記載のない米粉でも、実際に作った実績（感想）があるものは
+          「作れるかも？」として通常の紐付けと区別して紹介する（issue #67）。
+          0件の場合はセクションごと表示しない */}
+      {possibleRecipes.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-lg font-bold text-stone-900">
+            作れるかも？なレシピ（{possibleRecipes.length}件）
+          </h2>
+          <p className="mt-1 text-xs text-stone-500">
+            レシピに{brand.product_name}の記載はありませんが、この米粉で実際に作った実績（感想）があるレシピです。
           </p>
-        ) : (
           <ul className="mt-4 space-y-3">
-            {brandRecipes.map(({ recipe, link_status, result_memo, reviews }) => (
-              <li key={recipe!.id}>
-                <Link
-                  href={`/recipes/${recipe!.id}`}
-                  className="block rounded-lg border border-amber-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
-                >
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {recipe!.bread_type && (
-                      <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600">
-                        {recipe!.bread_type.name}
-                      </span>
-                    )}
-                    <LinkStatusBadge status={link_status} />
-                    {reviews.length > 0 && <BakedBadge />}
-                  </div>
-                  <h3 className="mt-2 font-semibold leading-snug text-stone-900">
-                    {recipe!.title}
-                  </h3>
-                  <p className="mt-1 text-xs text-stone-500">
-                    {recipe!.site_name} ／ {recipe!.author_name}さん
-                  </p>
-                  {result_memo && (
-                    <p className="mt-2 rounded bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                      実食メモ：{result_memo}
-                    </p>
-                  )}
-                </Link>
+            {possibleRecipes.map((row) => (
+              <li key={row.recipe!.id}>
+                <BrandRecipeCard row={row} />
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      )}
     </article>
   );
 }

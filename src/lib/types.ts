@@ -186,6 +186,47 @@ export function countReviews(recipe: Pick<Recipe, "flours">): number {
 }
 
 /**
+ * レシピに記載のある米粉（銘柄指定あり・目視で確認可能）だけを返す。
+ * 「銘柄指定なし」はレシピ側の情報ではなく感想側の実績なので、
+ * レシピ詳細では感想セクション（{@link getReviewEntries}）で扱う（issue #66）。
+ */
+export function getListedFlours(recipe: Pick<Recipe, "flours">): RecipeFlour[] {
+  return recipe.flours.filter((f) => f.link_status !== "brand_unspecified");
+}
+
+/** 感想1件と、その感想で使った銘柄の組（レシピ詳細の感想セクション用） */
+export type ReviewEntry = {
+  review: Review;
+  brand: RecipeFlour["brand"];
+};
+
+/**
+ * レシピに紐づく全感想を、使った銘柄の情報つきで新しい順に返す。
+ * 銘柄指定なしの米粉で作った感想も含む（issue #66）。
+ */
+export function getReviewEntries(recipe: Pick<Recipe, "flours">): ReviewEntry[] {
+  return recipe.flours
+    .flatMap((f) => f.reviews.map((review) => ({ review, brand: f.brand })))
+    .sort((a, b) => (a.review.created_at < b.review.created_at ? 1 : -1));
+}
+
+/**
+ * 銘柄詳細の「この銘柄で作れるレシピ」。レシピ側に根拠がある紐付け
+ * （銘柄指定あり・目視で確認可能）だけを返す（issue #67）。
+ */
+export function getConfirmedBrandRecipes(rows: BrandRecipe[]): BrandRecipe[] {
+  return rows.filter((row) => row.link_status !== "brand_unspecified");
+}
+
+/**
+ * 銘柄詳細の「作れるかも？」レシピ。レシピに記載はないが、
+ * この米粉で作った実績（感想）がある紐付け（銘柄指定なし）を返す（issue #67）。
+ */
+export function getPossibleBrandRecipes(rows: BrandRecipe[]): BrandRecipe[] {
+  return rows.filter((row) => row.link_status === "brand_unspecified");
+}
+
+/**
  * 紐づく銘柄がすべてグルテンなしのレシピを「グルテンフリー」と扱う。
  * 銘柄未紐付けのレシピは判定不能なので false。
  */

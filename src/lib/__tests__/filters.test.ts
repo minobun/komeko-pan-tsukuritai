@@ -1,10 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
+  filterBrandRecipesByBreadType,
   filterBrands,
   filterRecipes,
+  filterReviewEntriesByBrand,
   matchesTriState,
 } from "@/lib/filters";
-import type { FlourBrand, Recipe, RecipeFlour } from "@/lib/types";
+import type {
+  BrandRecipe,
+  FlourBrand,
+  Recipe,
+  RecipeFlour,
+  ReviewEntry,
+} from "@/lib/types";
 
 function makeFlour(
   brand: Partial<NonNullable<RecipeFlour["brand"]>> = {},
@@ -176,6 +184,72 @@ describe("matchesTriState", () => {
   it("withoutは値がfalseのときだけtrue", () => {
     expect(matchesTriState("without", false)).toBe(true);
     expect(matchesTriState("without", true)).toBe(false);
+  });
+});
+
+describe("filterReviewEntriesByBrand", () => {
+  const review = {
+    id: "rv-1",
+    body: "もちもちに焼けた",
+    flour_tips: null,
+    author_name: "運営者",
+    author_type: "operator",
+    created_at: "2026-01-01T00:00:00Z",
+  } as const;
+  const brand = (id: string) => ({
+    id,
+    maker: { id: "maker-1", name: "テスト製粉" },
+    product_name: "テスト米粉",
+    has_gluten: false,
+    has_psyllium: false,
+    is_discontinued: false,
+  });
+  const entries: ReviewEntry[] = [
+    { review: { ...review, id: "rv-1" }, brand: brand("brand-1") },
+    { review: { ...review, id: "rv-2" }, brand: brand("brand-2") },
+    { review: { ...review, id: "rv-3" }, brand: null },
+  ];
+
+  it("空文字（すべて）なら全件返す", () => {
+    expect(filterReviewEntriesByBrand(entries, "")).toEqual(entries);
+  });
+
+  it("銘柄IDが一致する感想だけ残す（brandがnullの感想は除外）", () => {
+    expect(
+      filterReviewEntriesByBrand(entries, "brand-1").map((e) => e.review.id),
+    ).toEqual(["rv-1"]);
+  });
+});
+
+describe("filterBrandRecipesByBreadType", () => {
+  const makeRow = (
+    id: string,
+    breadType: { id: string; name: string } | null,
+  ): BrandRecipe => ({
+    link_status: "brand_specified",
+    result_memo: null,
+    reviews: [],
+    recipe: {
+      id,
+      title: "テストレシピ",
+      site_name: "テストサイト",
+      author_name: "テスト太郎",
+      status: "published",
+      created_at: "2026-01-01T00:00:00Z",
+      bread_type: breadType,
+    },
+  });
+  const shokupan = makeRow("r-1", { id: "bt-1", name: "食パン" });
+  const round = makeRow("r-2", { id: "bt-2", name: "丸パン" });
+  const noType = makeRow("r-3", null);
+  const rows = [shokupan, round, noType];
+
+  it("空文字（すべて）なら全件返す", () => {
+    expect(filterBrandRecipesByBreadType(rows, "")).toEqual(rows);
+  });
+
+  it("パン種別名が一致するレシピだけ残す（bread_typeがnullの行は除外）", () => {
+    expect(filterBrandRecipesByBreadType(rows, "食パン")).toEqual([shokupan]);
   });
 });
 

@@ -8,12 +8,18 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { filterBrands, type TriState } from "@/lib/filters";
 import type { FlourBrand } from "@/lib/types";
-import { BrandGrid } from "./brand-grid";
+import { BrandList } from "./brand-list";
 
 const selectClass =
   "rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-700";
 
-export function BrandFilters({ brands }: { brands: FlourBrand[] }) {
+type Props = {
+  brands: FlourBrand[];
+  /** 銘柄ID → 感想件数（BrandListへそのまま渡す） */
+  reviewCounts: Record<string, number>;
+};
+
+export function BrandFilters({ brands, reviewCounts }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -79,7 +85,7 @@ export function BrandFilters({ brands }: { brands: FlourBrand[] }) {
       </div>
       <p className="mt-3 text-sm text-stone-500">{filtered.length}件の銘柄</p>
       <div className="mt-3">
-        <BrandGrid brands={filtered} />
+        <BrandList brands={filtered} reviewCounts={reviewCounts} />
       </div>
     </div>
   );
