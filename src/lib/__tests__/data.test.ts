@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  getBrandReviewCounts,
   getFlourBrandById,
   getFlourBrands,
   getRecipeById,
@@ -165,6 +166,57 @@ describe("メーカーマスタ（makers）の取得", () => {
     stubQuery({ data: rows, error: null });
     const result = await getFlourBrands();
     expect(result.map((b) => b.id)).toEqual(["b-3", "b-2", "b-1"]);
+  });
+});
+
+describe("getBrandReviewCounts", () => {
+  it("公開中レシピの紐付けに付いた感想を銘柄ごとに合算する", async () => {
+    const rows = [
+      {
+        flour_brand_id: "b-1",
+        reviews: [{ id: "rv-1" }, { id: "rv-2" }],
+        recipe: { status: "published" },
+      },
+      {
+        flour_brand_id: "b-1",
+        reviews: [{ id: "rv-3" }],
+        recipe: { status: "published" },
+      },
+      {
+        flour_brand_id: "b-2",
+        reviews: [],
+        recipe: { status: "published" },
+      },
+    ];
+    stubQuery({ data: rows, error: null });
+    await expect(getBrandReviewCounts()).resolves.toEqual({
+      "b-1": 3,
+      "b-2": 0,
+    });
+  });
+
+  it("非公開レシピの感想やレシピ欠損行は数えない", async () => {
+    const rows = [
+      {
+        flour_brand_id: "b-1",
+        reviews: [{ id: "rv-1" }],
+        recipe: { status: "draft" },
+      },
+      { flour_brand_id: "b-2", reviews: [{ id: "rv-2" }], recipe: null },
+      {
+        flour_brand_id: "b-3",
+        reviews: [{ id: "rv-3" }],
+        recipe: { status: "published" },
+      },
+    ];
+    stubQuery({ data: rows, error: null });
+    await expect(getBrandReviewCounts()).resolves.toEqual({ "b-3": 1 });
+  });
+
+  it("取得に失敗したらフォールバック値（空オブジェクト）を返す", async () => {
+    stubQuery({ data: null, error: { message: "connection refused" } });
+    await expect(getBrandReviewCounts()).resolves.toEqual({});
+    expect(console.error).toHaveBeenCalled();
   });
 });
 
