@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { buildPageMetadata } from "@/lib/metadata";
 import { notFound } from "next/navigation";
 import { BrandChips } from "@/components/brand-card";
 import { BrandImage } from "@/components/brand-image";
+import { JsonLd } from "@/components/json-ld";
 import { VerificationBadge } from "@/components/verification-badge";
+import {
+  buildBrandProductSchema,
+  buildBreadcrumbSchema,
+} from "@/lib/structured-data";
 import {
   getFlourBrandById,
   getFlourBrands,
@@ -21,15 +27,33 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const brand = await getFlourBrandById(id);
-  if (!brand) return {};
+  const [brand, brandRecipes] = await Promise.all([
+    getFlourBrandById(id),
+    getRecipesByBrandId(id),
+  ]);
+  if (!brand) return { title: "銘柄が見つかりません", robots: { index: false } };
+
   const name = `${brand.maker_name} ${brand.product_name}`;
-  return {
-    title: `${name}｜成分と作れる米粉パンレシピ`,
+  // 「銘柄名×パン種別」での検索流入を狙い、逆引きレシピのパン種別をtitleに含める
+  const breadTypes = Array.from(
+    new Set(
+      brandRecipes.flatMap((r) =>
+        r.recipe?.bread_type ? [r.recipe.bread_type.name] : [],
+      ),
+    ),
+  );
+  const breadTypeLabel = breadTypes.slice(0, 3).join("・");
+
+  return buildPageMetadata({
+    title: breadTypeLabel
+      ? `${name}で作る米粉パン（${breadTypeLabel}）｜成分とレシピ${brandRecipes.length}件`
+      : `${name}｜成分と作れる米粉パンレシピ`,
     description:
-      brand.note ??
-      `${name}の成分情報（グルテン・サイリウムの有無）と、この米粉で作れるパンレシピの一覧。`,
-  };
+      brand.note?.slice(0, 120) ??
+      `${name}の成分情報（製パン用グルテン・サイリウムの有無）と、この米粉で作れる米粉パンレシピ${brandRecipes.length}件の逆引き一覧。`,
+    path: `/brands/${brand.id}`,
+    type: "article",
+  });
 }
 
 export default async function BrandDetailPage({ params }: Props) {
@@ -42,6 +66,14 @@ export default async function BrandDetailPage({ params }: Props) {
 
   return (
     <article>
+      <JsonLd data={buildBrandProductSchema(brand, brandRecipes)} />
+      <JsonLd
+        data={buildBreadcrumbSchema([
+          { name: "ホーム", path: "/" },
+          { name: "米粉銘柄一覧", path: "/brands" },
+          { name: brand.product_name, path: `/brands/${brand.id}` },
+        ])}
+      />
       <nav className="text-xs text-stone-500" aria-label="パンくず">
         <Link href="/brands" className="hover:text-amber-800">
           米粉銘柄一覧

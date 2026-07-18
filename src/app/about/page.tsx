@@ -1,11 +1,12 @@
-import type { Metadata } from "next";
 import { VerificationBadge } from "@/components/verification-badge";
+import { buildPageMetadata } from "@/lib/metadata";
 import { CONTACT_FORM_URL, SITE_NAME } from "@/lib/site";
 
-export const metadata: Metadata = {
+export const metadata = buildPageMetadata({
   title: "About・運営ポリシー",
   description: `${SITE_NAME}の運営ポリシー。掲載情報の調査方法、著作権の考え方、削除依頼・お問い合わせ窓口、広告表記について。`,
-};
+  path: "/about",
+});
 
 export default function AboutPage() {
   return (

@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { JsonLd } from "@/components/json-ld";
 import { VerificationBadge } from "@/components/verification-badge";
 import { getRecipeById, getRecipes } from "@/lib/data";
+import { buildPageMetadata } from "@/lib/metadata";
+import {
+  buildBreadcrumbSchema,
+  buildRecipeBrandListSchema,
+} from "@/lib/structured-data";
 import { isGlutenFree } from "@/lib/types";
 
 export const revalidate = 3600;
@@ -17,16 +23,31 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const recipe = await getRecipeById(id);
-  if (!recipe) return {};
+  if (!recipe) {
+    return { title: "レシピが見つかりません", robots: { index: false } };
+  }
+
   const brandNames = recipe.flours
     .flatMap((f) => (f.brand ? [f.brand.product_name] : []))
     .join("・");
-  return {
+  const breadType = recipe.bread_type?.name;
+  const hasBaked = recipe.flours.some((f) => f.verification_status === "baked");
+
+  return buildPageMetadata({
     title: brandNames
       ? `${recipe.title}｜使用米粉: ${brandNames}`
       : recipe.title,
-    description: `${recipe.site_name}掲載「${recipe.title}」（${recipe.author_name}さん）で使われている米粉銘柄と検証状況のまとめ。`,
-  };
+    description: [
+      `${recipe.site_name}掲載の${breadType ?? "米粉パン"}レシピ「${recipe.title}」（${recipe.author_name}さん）で使われている米粉銘柄`,
+      brandNames && `（${brandNames}）`,
+      "と検証状況のまとめ。",
+      hasBaked && "運営者が実際に焼いて確認した実食メモつき。",
+    ]
+      .filter(Boolean)
+      .join(""),
+    path: `/recipes/${recipe.id}`,
+    type: "article",
+  });
 }
 
 export default async function RecipeDetailPage({ params }: Props) {
@@ -36,6 +57,14 @@ export default async function RecipeDetailPage({ params }: Props) {
 
   return (
     <article>
+      <JsonLd data={buildRecipeBrandListSchema(recipe)} />
+      <JsonLd
+        data={buildBreadcrumbSchema([
+          { name: "ホーム", path: "/" },
+          { name: "レシピ一覧", path: "/recipes" },
+          { name: recipe.title, path: `/recipes/${recipe.id}` },
+        ])}
+      />
       <nav className="text-xs text-stone-500" aria-label="パンくず">
         <Link href="/recipes" className="hover:text-amber-800">
           レシピ一覧
