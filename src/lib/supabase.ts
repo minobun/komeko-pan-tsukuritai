@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { env } from "./env";
 
 /**
  * ISR用の再検証間隔（秒）。Supabaseへの全リクエストをNext.jsのData Cacheに載せ、
@@ -21,8 +22,8 @@ let client: SupabaseClient | null = null;
 export function getSupabaseClient(): SupabaseClient {
   if (client) return client;
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error(
       "NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY が設定されていません（.env.local.example 参照。Vercelの場合はProject Settings > Environment Variablesで設定してください）",
