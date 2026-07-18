@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   compareBrandsByName,
   formatBrandName,
+  getListedFlours,
   getMakerName,
   getRecipeIngredientUsages,
+  getReviewEntries,
   hasBakedReview,
   isGlutenFree,
   type Recipe,
@@ -169,6 +171,59 @@ describe("hasBakedReview", () => {
 
   it("銘柄が未紐付け（floursが空）ならfalse", () => {
     expect(hasBakedReview(makeRecipe([]))).toBe(false);
+  });
+});
+
+describe("getListedFlours", () => {
+  it("「銘柄指定あり」「目視で確認可能」だけをレシピに記載のある米粉として返す", () => {
+    const specified = makeFlour();
+    const visual = makeFlour({ link_status: "visually_identified" });
+    const unspecified = makeFlour({ link_status: "brand_unspecified" });
+    const recipe = makeRecipe([specified, visual, unspecified]);
+    expect(getListedFlours(recipe)).toEqual([specified, visual]);
+  });
+
+  it("該当がなければ空配列", () => {
+    const recipe = makeRecipe([makeFlour({ link_status: "brand_unspecified" })]);
+    expect(getListedFlours(recipe)).toEqual([]);
+  });
+});
+
+describe("getReviewEntries", () => {
+  it("全銘柄の感想を銘柄情報つきでフラットに返す（銘柄指定なしの感想も含む）", () => {
+    const specified = makeFlour({
+      reviews: [makeReview({ id: "rv-1", created_at: "2026-01-01T00:00:00Z" })],
+    });
+    const unspecified = makeFlour({
+      link_status: "brand_unspecified",
+      brand: {
+        id: "brand-2",
+        maker: { id: "maker-1", name: "テスト製粉" },
+        product_name: "別の米粉",
+        has_gluten: false,
+        has_psyllium: false,
+        is_discontinued: false,
+      },
+      reviews: [makeReview({ id: "rv-2", created_at: "2026-02-01T00:00:00Z" })],
+    });
+    const entries = getReviewEntries(makeRecipe([specified, unspecified]));
+    expect(entries.map((e) => e.review.id)).toEqual(["rv-2", "rv-1"]);
+    expect(entries.map((e) => e.brand?.id)).toEqual(["brand-2", "brand-1"]);
+  });
+
+  it("感想は新しい順に並ぶ", () => {
+    const flour = makeFlour({
+      reviews: [
+        makeReview({ id: "rv-old", created_at: "2026-01-01T00:00:00Z" }),
+        makeReview({ id: "rv-new", created_at: "2026-06-01T00:00:00Z" }),
+      ],
+    });
+    const entries = getReviewEntries(makeRecipe([flour]));
+    expect(entries.map((e) => e.review.id)).toEqual(["rv-new", "rv-old"]);
+  });
+
+  it("感想がなければ空配列", () => {
+    expect(getReviewEntries(makeRecipe([makeFlour()]))).toEqual([]);
   });
 });
 
