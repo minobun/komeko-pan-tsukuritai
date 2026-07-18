@@ -180,6 +180,11 @@ export function hasBakedReview(recipe: Pick<Recipe, "flours">): boolean {
   return recipe.flours.some((f) => f.reviews.length > 0);
 }
 
+/** レシピに紐づく感想（全銘柄分）の合計件数。一覧の「感想 n件」表示に使う */
+export function countReviews(recipe: Pick<Recipe, "flours">): number {
+  return recipe.flours.reduce((sum, f) => sum + f.reviews.length, 0);
+}
+
 /**
  * 紐づく銘柄がすべてグルテンなしのレシピを「グルテンフリー」と扱う。
  * 銘柄未紐付けのレシピは判定不能なので false。
