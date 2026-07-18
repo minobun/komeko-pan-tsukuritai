@@ -4,6 +4,7 @@
 // 銘柄は Product、一覧は ItemList、パンくずは BreadcrumbList のみを出す。
 
 import { absoluteUrl, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "./site";
+import { formatBrandName, getMakerName } from "./types";
 import type { BrandRecipe, FlourBrand, Recipe } from "./types";
 
 /** トップページに出すサイト全体の定義 */
@@ -61,7 +62,8 @@ export function buildBrandProductSchema(
   brand: FlourBrand,
   brandRecipes: BrandRecipe[],
 ) {
-  const name = `${brand.maker_name} ${brand.product_name}`;
+  const name = formatBrandName(brand);
+  const makerName = getMakerName(brand);
   const properties = [
     { name: "製パン用グルテン", value: brand.has_gluten ? "あり" : "なし" },
     { name: "サイリウム", value: brand.has_psyllium ? "あり" : "なし" },
@@ -73,7 +75,8 @@ export function buildBrandProductSchema(
     "@type": "Product",
     name,
     url: absoluteUrl(`/brands/${brand.id}`),
-    brand: { "@type": "Brand", name: brand.maker_name },
+    // メーカー未取得のときは空のBrandを出さない
+    ...(makerName ? { brand: { "@type": "Brand", name: makerName } } : {}),
     category: "米粉",
     description:
       brand.note ??
@@ -94,7 +97,7 @@ export function buildRecipeBrandListSchema(recipe: Recipe) {
   return buildItemListSchema(
     `${recipe.title}で使われている米粉銘柄`,
     brands.map((brand) => ({
-      name: `${brand.maker_name} ${brand.product_name}`,
+      name: formatBrandName(brand),
       path: `/brands/${brand.id}`,
     })),
   );

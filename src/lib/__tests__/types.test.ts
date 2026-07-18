@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  compareBrandsByName,
+  formatBrandName,
+  getMakerName,
   getRecipeIngredientUsages,
   hasBakedReview,
   isGlutenFree,
@@ -26,7 +29,7 @@ function makeFlour(overrides: Partial<RecipeFlour> = {}): RecipeFlour {
     result_memo: null,
     brand: {
       id: "brand-1",
-      maker_name: "テスト製粉",
+      maker: { id: "maker-1", name: "テスト製粉" },
       product_name: "テスト米粉",
       has_gluten: false,
       has_psyllium: false,
@@ -59,6 +62,56 @@ function makeRecipe(
   };
 }
 
+describe("getMakerName / formatBrandName", () => {
+  const brand = {
+    maker: { id: "maker-1", name: "テスト製粉" },
+    product_name: "テスト米粉",
+  };
+
+  it("メーカー名を返す", () => {
+    expect(getMakerName(brand)).toBe("テスト製粉");
+  });
+
+  it("メーカー名と商品名を並べた表示名を返す", () => {
+    expect(formatBrandName(brand)).toBe("テスト製粉 テスト米粉");
+  });
+
+  it("makerがnullでも表示を壊さない（メーカー名は空文字・表示名は商品名のみ）", () => {
+    const orphan = { maker: null, product_name: "テスト米粉" };
+    expect(getMakerName(orphan)).toBe("");
+    expect(formatBrandName(orphan)).toBe("テスト米粉");
+  });
+});
+
+describe("compareBrandsByName", () => {
+  const brand = (makerName: string | null, productName: string) => ({
+    maker: makerName === null ? null : { id: `maker-${makerName}`, name: makerName },
+    product_name: productName,
+  });
+
+  it("メーカー名の五十音順に並べる", () => {
+    const brands = [brand("波里", "米粉"), brand("共立食品", "米粉")];
+    expect(
+      [...brands].sort(compareBrandsByName).map((b) => b.maker?.name),
+    ).toEqual(["共立食品", "波里"]);
+  });
+
+  it("同じメーカーの中では商品名順に並べる", () => {
+    const brands = [
+      brand("波里", "パン用米粉"),
+      brand("波里", "お米の粉"),
+    ];
+    expect(
+      [...brands].sort(compareBrandsByName).map((b) => b.product_name),
+    ).toEqual(["お米の粉", "パン用米粉"]);
+  });
+
+  it("makerがnullの銘柄が混ざってもエラーにならない", () => {
+    const brands = [brand("波里", "米粉"), brand(null, "米粉")];
+    expect(() => [...brands].sort(compareBrandsByName)).not.toThrow();
+  });
+});
+
 describe("isGlutenFree", () => {
   it("紐づく銘柄がすべてグルテンなしならtrue", () => {
     const recipe = makeRecipe([makeFlour(), makeFlour()]);
@@ -71,7 +124,7 @@ describe("isGlutenFree", () => {
       makeFlour({
         brand: {
           id: "brand-2",
-          maker_name: "テスト製粉",
+          maker: { id: "maker-1", name: "テスト製粉" },
           product_name: "ミックス粉",
           has_gluten: true,
           has_psyllium: false,

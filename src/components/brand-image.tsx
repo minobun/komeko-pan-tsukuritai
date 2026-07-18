@@ -1,7 +1,7 @@
-import type { FlourBrand } from "@/lib/types";
+import { formatBrandName, type FlourBrand } from "@/lib/types";
 
 type Props = {
-  brand: Pick<FlourBrand, "image_url" | "maker_name" | "product_name">;
+  brand: Pick<FlourBrand, "image_url" | "maker" | "product_name">;
   className?: string;
 };
 
@@ -23,7 +23,7 @@ export function BrandImage({ brand, className }: Props) {
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={brand.image_url}
-      alt={`${brand.maker_name} ${brand.product_name}`}
+      alt={formatBrandName(brand)}
       loading="lazy"
       className={`bg-white object-contain ${className ?? ""}`}
     />

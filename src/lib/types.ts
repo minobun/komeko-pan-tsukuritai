@@ -6,9 +6,17 @@ export type BreadType = {
   sort_order: number;
 };
 
+/** メーカー（製造会社）マスタ。spec §4.7 */
+export type Maker = {
+  id: string;
+  name: string;
+  official_url: string | null;
+};
+
 export type FlourBrand = {
   id: string;
-  maker_name: string;
+  /** 製造メーカー（makers への参照）。埋め込み取得に失敗した場合は null */
+  maker: Pick<Maker, "id" | "name"> | null;
   product_name: string;
   is_bread_use: boolean;
   has_gluten: boolean;
@@ -60,7 +68,7 @@ export type RecipeFlour = {
   brand: Pick<
     FlourBrand,
     | "id"
-    | "maker_name"
+    | "maker"
     | "product_name"
     | "has_gluten"
     | "has_psyllium"
@@ -103,6 +111,34 @@ export type BrandRecipe = {
     bread_type: Pick<BreadType, "id" | "name"> | null;
   } | null;
 };
+
+/** 銘柄が持つメーカー情報の最小単位。表示系の関数はこれだけを受け取る */
+type BrandMaker = Pick<FlourBrand, "maker">;
+type BrandDisplayName = BrandMaker & Pick<FlourBrand, "product_name">;
+
+/** メーカー名。メーカー未取得でも表示を壊さないよう空文字を返す */
+export function getMakerName(brand: BrandMaker): string {
+  return brand.maker?.name ?? "";
+}
+
+/** 一覧・構造化データで使う「メーカー名 商品名」形式の表示名 */
+export function formatBrandName(brand: BrandDisplayName): string {
+  return [getMakerName(brand), brand.product_name].filter(Boolean).join(" ");
+}
+
+/**
+ * 銘柄一覧の表示順（メーカー名 → 商品名）。
+ * メーカー名は埋め込み取得のためDB側で並べ替えられず、取得後にこれで整列する。
+ */
+export function compareBrandsByName(
+  a: BrandDisplayName,
+  b: BrandDisplayName,
+): number {
+  const byMaker = getMakerName(a).localeCompare(getMakerName(b), "ja");
+  return byMaker !== 0
+    ? byMaker
+    : a.product_name.localeCompare(b.product_name, "ja");
+}
 
 /** レシピ側の材料使用有無。DBの null は「未確認」として扱う */
 export type IngredientUsage = "used" | "unused" | "unknown";

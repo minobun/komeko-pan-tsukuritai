@@ -16,6 +16,7 @@ import {
   getFlourBrands,
   getRecipesByBrandId,
 } from "@/lib/data";
+import { formatBrandName, getMakerName } from "@/lib/types";
 
 export const revalidate = 3600;
 
@@ -34,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   ]);
   if (!brand) return { title: "銘柄が見つかりません", robots: { index: false } };
 
-  const name = `${brand.maker_name} ${brand.product_name}`;
+  const name = formatBrandName(brand);
   // 「銘柄名×パン種別」での検索流入を狙い、逆引きレシピのパン種別をtitleに含める
   const breadTypes = Array.from(
     new Set(
@@ -89,7 +90,7 @@ export default async function BrandDetailPage({ params }: Props) {
           className="h-48 w-full rounded-lg border border-stone-200 sm:h-52"
         />
         <div>
-          <p className="text-sm text-stone-500">{brand.maker_name}</p>
+          <p className="text-sm text-stone-500">{getMakerName(brand)}</p>
           <h1 className="mt-1 text-2xl font-bold text-stone-900">
             {brand.product_name}
           </h1>

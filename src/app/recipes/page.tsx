@@ -24,7 +24,7 @@ export default async function RecipesPage() {
   const makers = Array.from(
     new Set(
       recipes.flatMap((recipe) =>
-        recipe.flours.flatMap((f) => (f.brand ? [f.brand.maker_name] : [])),
+        recipe.flours.flatMap((f) => (f.brand?.maker ? [f.brand.maker.name] : [])),
       ),
     ),
   ).sort((a, b) => a.localeCompare(b, "ja"));

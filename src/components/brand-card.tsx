@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { FlourBrand } from "@/lib/types";
+import { getMakerName, type FlourBrand } from "@/lib/types";
 import { BrandImage } from "./brand-image";
 
 export function BrandChips({ brand }: { brand: FlourBrand }) {
@@ -43,7 +43,7 @@ export function BrandCard({ brand }: { brand: FlourBrand }) {
         brand={brand}
         className="mb-3 h-32 w-full rounded-md border border-stone-100"
       />
-      <p className="text-xs text-stone-500">{brand.maker_name}</p>
+      <p className="text-xs text-stone-500">{getMakerName(brand)}</p>
       <h3 className="mt-0.5 font-semibold leading-snug text-stone-900">
         {brand.product_name}
       </h3>
