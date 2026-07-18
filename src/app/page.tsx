@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { BrandCard } from "@/components/brand-card";
+import { JsonLd } from "@/components/json-ld";
 import { RecipeCard } from "@/components/recipe-card";
 import { getFeaturedBrands, getLatestRecipes } from "@/lib/data";
+import { buildWebSiteSchema } from "@/lib/structured-data";
 
 // ISR: ビルド時＋1時間ごと（または手動revalidate）にのみDBへアクセスする
 export const revalidate = 3600;
@@ -36,6 +38,7 @@ export default async function Home() {
 
   return (
     <div className="space-y-12">
+      <JsonLd data={buildWebSiteSchema()} />
       <section className="rounded-xl bg-amber-800 px-6 py-10 text-amber-50 sm:px-10">
         <h1 className="text-2xl font-bold leading-snug sm:text-3xl">
           米粉パンのレシピを、

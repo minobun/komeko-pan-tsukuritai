@@ -1,0 +1,36 @@
+# WBS 6.4: レシピ外部リンクの死活チェック（週1）
+# 結果はジョブのサマリに出る。運用時の確認手順は WBS 8.2 を参照。
+name: Link check
+
+on:
+  schedule:
+    # 毎週月曜 09:00 JST（= 00:00 UTC）
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+# 同時実行するとstatus更新が競合するため、後発を待たせる
+concurrency:
+  group: link-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - run: npm ci
+
+      - name: Check recipe links
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+        run: node scripts/check-links.mjs
