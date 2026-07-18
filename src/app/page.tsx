@@ -1,65 +1,109 @@
-import Image from "next/image";
+import Link from "next/link";
+import { BrandCard } from "@/components/brand-card";
+import { RecipeCard } from "@/components/recipe-card";
+import { getFeaturedBrands, getLatestRecipes } from "@/lib/data";
 
-export default function Home() {
+// ISR: ビルド時＋1時間ごと（または手動revalidate）にのみDBへアクセスする
+export const revalidate = 3600;
+
+function SectionHeading({
+  title,
+  href,
+  linkLabel,
+}: {
+  title: string;
+  href: string;
+  linkLabel: string;
+}) {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="flex items-baseline justify-between">
+      <h2 className="text-xl font-bold text-stone-900">{title}</h2>
+      <Link
+        href={href}
+        className="text-sm font-medium text-amber-800 hover:underline"
+      >
+        {linkLabel} →
+      </Link>
+    </div>
+  );
+}
+
+export default async function Home() {
+  const [latestRecipes, featuredBrands] = await Promise.all([
+    getLatestRecipes(6),
+    getFeaturedBrands(4),
+  ]);
+
+  return (
+    <div className="space-y-12">
+      <section className="rounded-xl bg-amber-800 px-6 py-10 text-amber-50 sm:px-10">
+        <h1 className="text-2xl font-bold leading-snug sm:text-3xl">
+          米粉パンのレシピを、
+          <br className="sm:hidden" />
+          「米粉の銘柄」から探せるサイト
+        </h1>
+        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-amber-100 sm:text-base">
+          米粉はメーカー・銘柄によって成分が大きく異なり、同じレシピでも仕上がりが変わります。
+          当サイトは、レシピと「実際に使われている米粉銘柄」の紐付けを独自調査・実食確認でまとめています。
+          家にある米粉から作れるレシピを逆引きすることもできます。
+        </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            href="/recipes"
+            className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100"
+          >
+            レシピを探す
+          </Link>
+          <Link
+            href="/brands"
+            className="rounded-full border border-amber-200 px-5 py-2 text-sm font-semibold text-amber-50 transition-colors hover:bg-amber-700"
+          >
+            米粉銘柄から探す
+          </Link>
+        </div>
+      </section>
+
+      <section>
+        <SectionHeading
+          title="新着レシピ"
+          href="/recipes"
+          linkLabel="レシピをすべて見る"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+        {latestRecipes.length === 0 ? (
+          <p className="mt-4 text-sm text-stone-500">
+            レシピは準備中です。もうしばらくお待ちください。
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        ) : (
+          <ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {latestRecipes.map((recipe) => (
+              <li key={recipe.id}>
+                <RecipeCard recipe={recipe} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <SectionHeading
+          title="注目の米粉銘柄"
+          href="/brands"
+          linkLabel="銘柄をすべて見る"
+        />
+        {featuredBrands.length === 0 ? (
+          <p className="mt-4 text-sm text-stone-500">
+            銘柄情報は準備中です。もうしばらくお待ちください。
+          </p>
+        ) : (
+          <ul className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {featuredBrands.map((brand) => (
+              <li key={brand.id}>
+                <BrandCard brand={brand} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
