@@ -1,5 +1,7 @@
 // サイト共通の定数（サイト名はWBS 1.4確定までの仮称）
 
+import { env } from "./env";
+
 export const SITE_NAME = "米粉パンつくりたい";
 
 export const SITE_DESCRIPTION =
@@ -14,11 +16,11 @@ const FALLBACK_SITE_URL = "https://komeko-pan-tsukuritai.vercel.app";
  * 本番以外ではVercelが自動で入れる VERCEL_URL を優先する。
  */
 function resolveSiteUrl(): string {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL;
+  const configured = env.NEXT_PUBLIC_SITE_URL;
   if (configured) return configured.replace(/\/+$/, "");
 
-  const vercelUrl = process.env.VERCEL_URL;
-  if (vercelUrl && process.env.VERCEL_ENV !== "production") {
+  const vercelUrl = env.VERCEL_URL;
+  if (vercelUrl && env.VERCEL_ENV !== "production") {
     return `https://${vercelUrl}`;
   }
   return FALLBACK_SITE_URL;
@@ -32,5 +34,4 @@ export function absoluteUrl(path: string): string {
 }
 
 /** 問い合わせ・削除依頼フォーム（WBS 2.4のGoogleフォームURLを環境変数で差し込む） */
-export const CONTACT_FORM_URL =
-  process.env.NEXT_PUBLIC_CONTACT_FORM_URL ?? "";
+export const CONTACT_FORM_URL = env.NEXT_PUBLIC_CONTACT_FORM_URL ?? "";

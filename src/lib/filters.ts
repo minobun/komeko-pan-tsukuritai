@@ -4,6 +4,7 @@
 
 import {
   isGlutenFree,
+  type BrandRecipe,
   type FlourBrand,
   type Recipe,
   type ReviewEntry,
@@ -15,6 +16,8 @@ export type RecipeFilterCondition = {
   /** パン種別名。空文字は「すべて」 */
   breadType: string;
   glutenFreeOnly: boolean;
+  /** サイリウム不使用（uses_psylliumがfalse）のみ。null（未確認）は含めない */
+  psylliumFreeOnly: boolean;
 };
 
 export function matchesRecipeFilter(
@@ -31,6 +34,7 @@ export function matchesRecipeFilter(
     return false;
   }
   if (cond.glutenFreeOnly && !isGlutenFree(recipe)) return false;
+  if (cond.psylliumFreeOnly && recipe.uses_psyllium !== false) return false;
   return true;
 }
 
@@ -57,6 +61,15 @@ export function filterReviewEntriesByBrand(
 ): ReviewEntry[] {
   if (!brandId) return entries;
   return entries.filter((entry) => entry.brand?.id === brandId);
+}
+
+/** 銘柄詳細の作れるレシピを「パン種別」で絞り込む。空文字は「すべて」 */
+export function filterBrandRecipesByBreadType(
+  rows: BrandRecipe[],
+  breadType: string,
+): BrandRecipe[] {
+  if (!breadType) return rows;
+  return rows.filter((row) => row.recipe?.bread_type?.name === breadType);
 }
 
 export type BrandFilterCondition = {

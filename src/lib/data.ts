@@ -136,6 +136,34 @@ export async function getFlourBrandById(
   });
 }
 
+/** getBrandReviewCounts が集計する recipe_flour_map の行 */
+type BrandReviewCountRow = {
+  flour_brand_id: string;
+  reviews: { id: string }[];
+  recipe: { status: string } | null;
+};
+
+/**
+ * 銘柄ごとの感想件数（銘柄一覧の「感想 n件」表示用）。
+ * 公開中レシピの紐付けに付いた感想のみを数える。紐付けのない銘柄はキー自体を持たない。
+ */
+export async function getBrandReviewCounts(): Promise<Record<string, number>> {
+  return withFallback("getBrandReviewCounts", {}, async () => {
+    const { data, error } = await getSupabaseClient()
+      .from("recipe_flour_map")
+      .select("flour_brand_id, reviews(id), recipe:recipes(status)");
+    if (error) throw new Error(`getBrandReviewCounts failed: ${error.message}`);
+    const rows = (data ?? []) as unknown as BrandReviewCountRow[];
+    const counts: Record<string, number> = {};
+    for (const row of rows) {
+      if (row.recipe?.status !== "published") continue;
+      counts[row.flour_brand_id] =
+        (counts[row.flour_brand_id] ?? 0) + row.reviews.length;
+    }
+    return counts;
+  });
+}
+
 /** 銘柄詳細の逆引き：その銘柄を使う公開中レシピの一覧 */
 export async function getRecipesByBrandId(
   brandId: string,
