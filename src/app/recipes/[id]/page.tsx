@@ -21,7 +21,7 @@ import {
   isGlutenFree,
 } from "@/lib/types";
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 type Props = { params: Promise<{ id: string }> };
 
