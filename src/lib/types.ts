@@ -206,6 +206,22 @@ export function getReviewEntries(recipe: Pick<Recipe, "flours">): ReviewEntry[] 
 }
 
 /**
+ * 銘柄詳細の「この銘柄で作れるレシピ」。レシピ側に根拠がある紐付け
+ * （銘柄指定あり・目視で確認可能）だけを返す（issue #67）。
+ */
+export function getConfirmedBrandRecipes(rows: BrandRecipe[]): BrandRecipe[] {
+  return rows.filter((row) => row.link_status !== "brand_unspecified");
+}
+
+/**
+ * 銘柄詳細の「作れるかも？」レシピ。レシピに記載はないが、
+ * この米粉で作った実績（感想）がある紐付け（銘柄指定なし）を返す（issue #67）。
+ */
+export function getPossibleBrandRecipes(rows: BrandRecipe[]): BrandRecipe[] {
+  return rows.filter((row) => row.link_status === "brand_unspecified");
+}
+
+/**
  * 紐づく銘柄がすべてグルテンなしのレシピを「グルテンフリー」と扱う。
  * 銘柄未紐付けのレシピは判定不能なので false。
  */
