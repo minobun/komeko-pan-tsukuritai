@@ -10,13 +10,8 @@ export const revalidate = 3600;
 type Props = { params: Promise<{ id: string }> };
 
 export async function generateStaticParams() {
-  try {
-    const recipes = await getRecipes();
-    return recipes.map((recipe) => ({ id: recipe.id }));
-  } catch {
-    // ビルド時にDBへ到達できない場合は全ページをオンデマンド生成に回す
-    return [];
-  }
+  const recipes = await getRecipes();
+  return recipes.map((recipe) => ({ id: recipe.id }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

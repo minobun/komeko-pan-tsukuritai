@@ -15,13 +15,8 @@ export const revalidate = 3600;
 type Props = { params: Promise<{ id: string }> };
 
 export async function generateStaticParams() {
-  try {
-    const brands = await getFlourBrands();
-    return brands.map((brand) => ({ id: brand.id }));
-  } catch {
-    // ビルド時にDBへ到達できない場合は全ページをオンデマンド生成に回す
-    return [];
-  }
+  const brands = await getFlourBrands();
+  return brands.map((brand) => ({ id: brand.id }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
