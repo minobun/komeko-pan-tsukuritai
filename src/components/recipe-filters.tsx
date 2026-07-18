@@ -28,11 +28,19 @@ export function RecipeFilters({ recipes, breadTypes, makers }: Props) {
   const maker = searchParams.get("maker") ?? "";
   const breadType = searchParams.get("type") ?? "";
   const glutenFreeOnly = searchParams.get("gf") === "1";
-  const hasFilter = maker !== "" || breadType !== "" || glutenFreeOnly;
+  const psylliumFreeOnly = searchParams.get("pf") === "1";
+  const hasFilter =
+    maker !== "" || breadType !== "" || glutenFreeOnly || psylliumFreeOnly;
 
   const filtered = useMemo(
-    () => filterRecipes(recipes, { maker, breadType, glutenFreeOnly }),
-    [recipes, maker, breadType, glutenFreeOnly],
+    () =>
+      filterRecipes(recipes, {
+        maker,
+        breadType,
+        glutenFreeOnly,
+        psylliumFreeOnly,
+      }),
+    [recipes, maker, breadType, glutenFreeOnly, psylliumFreeOnly],
   );
 
   const updateParam = (key: string, value: string) => {
@@ -89,6 +97,15 @@ export function RecipeFilters({ recipes, breadTypes, makers }: Props) {
             onChange={(e) => updateParam("gf", e.target.checked ? "1" : "")}
           />
           グルテンフリーのみ
+        </label>
+        <label className="flex items-center gap-2 text-sm text-stone-600">
+          <input
+            type="checkbox"
+            className="size-4 accent-amber-700"
+            checked={psylliumFreeOnly}
+            onChange={(e) => updateParam("pf", e.target.checked ? "1" : "")}
+          />
+          サイリウムなし
         </label>
         {hasFilter && (
           <button
