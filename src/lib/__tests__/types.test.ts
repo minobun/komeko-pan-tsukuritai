@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isGlutenFree, type Recipe, type RecipeFlour } from "@/lib/types";
+import {
+  getRecipeIngredientUsages,
+  isGlutenFree,
+  type Recipe,
+  type RecipeFlour,
+} from "@/lib/types";
 
 function makeFlour(overrides: Partial<RecipeFlour> = {}): RecipeFlour {
   return {
@@ -19,7 +24,10 @@ function makeFlour(overrides: Partial<RecipeFlour> = {}): RecipeFlour {
   };
 }
 
-function makeRecipe(flours: RecipeFlour[]): Recipe {
+function makeRecipe(
+  flours: RecipeFlour[],
+  overrides: Partial<Recipe> = {},
+): Recipe {
   return {
     id: "recipe-1",
     title: "テストレシピ",
@@ -27,9 +35,13 @@ function makeRecipe(flours: RecipeFlour[]): Recipe {
     site_name: "テストサイト",
     author_name: "テスト太郎",
     memo: null,
+    uses_psyllium: null,
+    uses_gluten: null,
+    uses_oil: null,
     created_at: "2026-01-01T00:00:00Z",
     bread_type: null,
     flours,
+    ...overrides,
   };
 }
 
@@ -63,5 +75,31 @@ describe("isGlutenFree", () => {
   it("brandがnullの行が含まれる場合は判定不能としてfalse", () => {
     const recipe = makeRecipe([makeFlour(), makeFlour({ brand: null })]);
     expect(isGlutenFree(recipe)).toBe(false);
+  });
+});
+
+describe("getRecipeIngredientUsages", () => {
+  it("サイリウム・グルテン・油をこの順で返す", () => {
+    const usages = getRecipeIngredientUsages(makeRecipe([]));
+    expect(usages.map((u) => u.label)).toEqual(["サイリウム", "グルテン", "油"]);
+  });
+
+  it("trueは「使用あり」、falseは「使用なし」として返す", () => {
+    const recipe = makeRecipe([], {
+      uses_psyllium: true,
+      uses_gluten: false,
+      uses_oil: true,
+    });
+    expect(getRecipeIngredientUsages(recipe).map((u) => u.usage)).toEqual([
+      "used",
+      "unused",
+      "used",
+    ]);
+  });
+
+  it("nullは「未確認」として返す（既存レシピは全項目が未確認）", () => {
+    expect(getRecipeIngredientUsages(makeRecipe([])).map((u) => u.usage)).toEqual(
+      ["unknown", "unknown", "unknown"],
+    );
   });
 });

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { IngredientUsageList } from "@/components/ingredient-usage-list";
 import { JsonLd } from "@/components/json-ld";
 import { VerificationBadge } from "@/components/verification-badge";
 import { getRecipeById, getRecipes } from "@/lib/data";
@@ -9,7 +10,7 @@ import {
   buildBreadcrumbSchema,
   buildRecipeBrandListSchema,
 } from "@/lib/structured-data";
-import { isGlutenFree } from "@/lib/types";
+import { getRecipeIngredientUsages, isGlutenFree } from "@/lib/types";
 
 export const revalidate = 3600;
 
@@ -97,6 +98,16 @@ export default async function RecipeDetailPage({ params }: Props) {
           {recipe.memo}
         </p>
       )}
+
+      <section className="mt-6">
+        <h2 className="text-sm font-bold text-stone-900">
+          サイリウム・グルテン・油の使用
+        </h2>
+        <IngredientUsageList usages={getRecipeIngredientUsages(recipe)} />
+        <p className="mt-2 text-xs text-stone-500">
+          「未確認」はレシピの材料欄を未調査の項目です。
+        </p>
+      </section>
 
       <div className="mt-6">
         <a

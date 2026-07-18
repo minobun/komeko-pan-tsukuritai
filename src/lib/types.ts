@@ -67,6 +67,12 @@ export type Recipe = {
   site_name: string;
   author_name: string;
   memo: string | null;
+  /** サイリウム使用有無。null は未確認 */
+  uses_psyllium: boolean | null;
+  /** グルテン使用有無。null は未確認 */
+  uses_gluten: boolean | null;
+  /** 油使用有無。null は未確認 */
+  uses_oil: boolean | null;
   created_at: string;
   bread_type: Pick<BreadType, "id" | "name"> | null;
   flours: RecipeFlour[];
@@ -87,6 +93,38 @@ export type BrandRecipe = {
     bread_type: Pick<BreadType, "id" | "name"> | null;
   } | null;
 };
+
+/** レシピ側の材料使用有無。DBの null は「未確認」として扱う */
+export type IngredientUsage = "used" | "unused" | "unknown";
+
+type RecipeIngredientKey = "uses_psyllium" | "uses_gluten" | "uses_oil";
+
+/** 表示する材料と順序。項目の追加はこの配列への追記だけで済ませる */
+const RECIPE_INGREDIENTS: { key: RecipeIngredientKey; label: string }[] = [
+  { key: "uses_psyllium", label: "サイリウム" },
+  { key: "uses_gluten", label: "グルテン" },
+  { key: "uses_oil", label: "油" },
+];
+
+export type RecipeIngredientUsage = {
+  key: RecipeIngredientKey;
+  label: string;
+  usage: IngredientUsage;
+};
+
+/** レシピの材料使用有無を、表示順に揃えたリストとして返す */
+export function getRecipeIngredientUsages(
+  recipe: Pick<Recipe, RecipeIngredientKey>,
+): RecipeIngredientUsage[] {
+  return RECIPE_INGREDIENTS.map(({ key, label }) => {
+    const value = recipe[key];
+    return {
+      key,
+      label,
+      usage: value === null ? "unknown" : value ? "used" : "unused",
+    };
+  });
+}
 
 /**
  * 紐づく銘柄がすべてグルテンなしのレシピを「グルテンフリー」と扱う。

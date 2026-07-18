@@ -99,6 +99,28 @@ describe("感想（reviews）の取得", () => {
   });
 });
 
+describe("レシピの材料使用有無（サイリウム・グルテン・油）の取得", () => {
+  it("getRecipesのクエリに3カラムが含まれる", async () => {
+    const builder = stubQuery({ data: [], error: null });
+    await getRecipes();
+    const selectArg = vi.mocked(builder.select as (q: string) => unknown).mock
+      .calls[0][0];
+    expect(selectArg).toContain("uses_psyllium");
+    expect(selectArg).toContain("uses_gluten");
+    expect(selectArg).toContain("uses_oil");
+  });
+
+  it("getRecipeByIdのクエリにも3カラムが含まれる", async () => {
+    const builder = stubQuery({ data: null, error: null });
+    await getRecipeById(VALID_UUID);
+    const selectArg = vi.mocked(builder.select as (q: string) => unknown).mock
+      .calls[0][0];
+    expect(selectArg).toContain("uses_psyllium");
+    expect(selectArg).toContain("uses_gluten");
+    expect(selectArg).toContain("uses_oil");
+  });
+});
+
 describe("getRecipesByBrandId", () => {
   it("uuid形式でないidはDBに問い合わせず空配列を返す", async () => {
     await expect(getRecipesByBrandId("1; drop table recipes")).resolves.toEqual(
