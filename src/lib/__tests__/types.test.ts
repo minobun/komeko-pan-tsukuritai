@@ -2,16 +2,37 @@ import { describe, expect, it } from "vitest";
 import {
   compareBrandsByName,
   formatBrandName,
+  getConfirmedBrandRecipes,
   getListedFlours,
   getMakerName,
+  getPossibleBrandRecipes,
   getRecipeIngredientUsages,
   getReviewEntries,
   hasBakedReview,
   isGlutenFree,
+  type BrandRecipe,
   type Recipe,
   type RecipeFlour,
   type Review,
 } from "@/lib/types";
+
+function makeBrandRecipe(overrides: Partial<BrandRecipe> = {}): BrandRecipe {
+  return {
+    link_status: "brand_specified",
+    result_memo: null,
+    reviews: [],
+    recipe: {
+      id: "recipe-1",
+      title: "テストレシピ",
+      site_name: "テストサイト",
+      author_name: "テスト太郎",
+      status: "published",
+      created_at: "2026-01-01T00:00:00Z",
+      bread_type: { id: "bt-1", name: "食パン" },
+    },
+    ...overrides,
+  };
+}
 
 function makeReview(overrides: Partial<Review> = {}): Review {
   return {
@@ -224,6 +245,26 @@ describe("getReviewEntries", () => {
 
   it("感想がなければ空配列", () => {
     expect(getReviewEntries(makeRecipe([makeFlour()]))).toEqual([]);
+  });
+});
+
+describe("getConfirmedBrandRecipes / getPossibleBrandRecipes", () => {
+  const specified = makeBrandRecipe();
+  const visual = makeBrandRecipe({ link_status: "visually_identified" });
+  const unspecified = makeBrandRecipe({ link_status: "brand_unspecified" });
+  const rows = [specified, visual, unspecified];
+
+  it("「銘柄指定あり」「目視で確認可能」は作れるレシピとして返す", () => {
+    expect(getConfirmedBrandRecipes(rows)).toEqual([specified, visual]);
+  });
+
+  it("「銘柄指定なし」（記載はないが作った実績がある）は作れるかも？レシピとして返す", () => {
+    expect(getPossibleBrandRecipes(rows)).toEqual([unspecified]);
+  });
+
+  it("該当がなければどちらも空配列", () => {
+    expect(getConfirmedBrandRecipes([unspecified])).toEqual([]);
+    expect(getPossibleBrandRecipes([specified, visual])).toEqual([]);
   });
 });
 
