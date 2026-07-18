@@ -22,6 +22,7 @@ function makeFlour(
       ...brand,
     },
     tags: [],
+    reviews: [],
   };
 }
 
@@ -82,7 +83,15 @@ describe("filterRecipes", () => {
 
   it("brandがnullの行はメーカー判定でエラーにならず除外される", () => {
     const recipe = makeRecipe({
-      flours: [{ verification_status: "baked", result_memo: null, brand: null, tags: [] }],
+      flours: [
+        {
+          verification_status: "baked",
+          result_memo: null,
+          brand: null,
+          tags: [],
+          reviews: [],
+        },
+      ],
     });
     expect(filterRecipes([recipe], { ...noFilter, maker: "波里" })).toEqual([]);
   });

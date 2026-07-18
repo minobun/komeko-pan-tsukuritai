@@ -14,6 +14,7 @@ function makeFlour(overrides: Partial<RecipeFlour> = {}): RecipeFlour {
       is_discontinued: false,
     },
     tags: [],
+    reviews: [],
     ...overrides,
   };
 }

@@ -28,6 +28,7 @@ function stubQuery(result: QueryResult) {
   vi.mocked(getSupabaseClient).mockReturnValue(
     builder as unknown as SupabaseClient,
   );
+  return builder;
 }
 
 beforeEach(() => {
@@ -73,6 +74,28 @@ describe("getRecipeById", () => {
     const row = { id: VALID_UUID, title: "テストレシピ" };
     stubQuery({ data: row, error: null });
     await expect(getRecipeById(VALID_UUID)).resolves.toEqual(row);
+  });
+});
+
+describe("感想（reviews）の取得", () => {
+  it("getRecipesのクエリに感想の埋め込み（本文・工夫コメント・投稿者情報）が含まれる", async () => {
+    const builder = stubQuery({ data: [], error: null });
+    await getRecipes();
+    const selectArg = vi.mocked(builder.select as (q: string) => unknown).mock
+      .calls[0][0];
+    expect(selectArg).toMatch(/reviews:reviews\(/);
+    expect(selectArg).toContain("body");
+    expect(selectArg).toContain("flour_tips");
+    expect(selectArg).toContain("author_name");
+    expect(selectArg).toContain("author_type");
+  });
+
+  it("getRecipesByBrandIdのクエリにも感想の埋め込みが含まれる", async () => {
+    const builder = stubQuery({ data: [], error: null });
+    await getRecipesByBrandId(VALID_UUID);
+    const selectArg = vi.mocked(builder.select as (q: string) => unknown).mock
+      .calls[0][0];
+    expect(selectArg).toMatch(/reviews:reviews\(/);
   });
 });
 
