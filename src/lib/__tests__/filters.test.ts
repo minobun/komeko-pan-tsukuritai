@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  filterBrandRecipesByBreadType,
   filterBrands,
   filterRecipes,
   filterReviewEntriesByBrand,
   matchesTriState,
 } from "@/lib/filters";
 import type {
+  BrandRecipe,
   FlourBrand,
   Recipe,
   RecipeFlour,
@@ -198,6 +200,38 @@ describe("filterReviewEntriesByBrand", () => {
     expect(
       filterReviewEntriesByBrand(entries, "brand-1").map((e) => e.review.id),
     ).toEqual(["rv-1"]);
+  });
+});
+
+describe("filterBrandRecipesByBreadType", () => {
+  const makeRow = (
+    id: string,
+    breadType: { id: string; name: string } | null,
+  ): BrandRecipe => ({
+    link_status: "brand_specified",
+    result_memo: null,
+    reviews: [],
+    recipe: {
+      id,
+      title: "テストレシピ",
+      site_name: "テストサイト",
+      author_name: "テスト太郎",
+      status: "published",
+      created_at: "2026-01-01T00:00:00Z",
+      bread_type: breadType,
+    },
+  });
+  const shokupan = makeRow("r-1", { id: "bt-1", name: "食パン" });
+  const round = makeRow("r-2", { id: "bt-2", name: "丸パン" });
+  const noType = makeRow("r-3", null);
+  const rows = [shokupan, round, noType];
+
+  it("空文字（すべて）なら全件返す", () => {
+    expect(filterBrandRecipesByBreadType(rows, "")).toEqual(rows);
+  });
+
+  it("パン種別名が一致するレシピだけ残す（bread_typeがnullの行は除外）", () => {
+    expect(filterBrandRecipesByBreadType(rows, "食パン")).toEqual([shokupan]);
   });
 });
 
