@@ -8,13 +8,16 @@ import type { BrandRecipe, BreadType, FlourBrand, Recipe } from "./types";
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const REVIEW_SELECT = `reviews:reviews(id, body, flour_tips, author_name, author_type, created_at)`;
+
 const RECIPE_SELECT = `
   id, title, url, site_name, author_name, memo, created_at,
   bread_type:bread_types(id, name),
   flours:recipe_flour_map(
     verification_status, result_memo,
     brand:flour_brands(id, maker_name, product_name, has_gluten, has_psyllium, is_discontinued),
-    tags:recipe_flour_result_tags(tag:result_tags(id, name))
+    tags:recipe_flour_result_tags(tag:result_tags(id, name)),
+    ${REVIEW_SELECT}
   )
 `;
 
@@ -136,6 +139,7 @@ export async function getRecipesByBrandId(
       .select(
         `
         verification_status, result_memo,
+        ${REVIEW_SELECT},
         recipe:recipes(
           id, title, site_name, author_name, status, created_at,
           bread_type:bread_types(id, name)

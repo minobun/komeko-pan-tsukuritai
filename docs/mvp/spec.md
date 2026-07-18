@@ -81,9 +81,10 @@
 | recipe_id           | uuid | FK → recipes                                           |
 | flour_brand_id      | uuid | FK → flour_brands                                      |
 | verification_status | text | `baked`（実食確認）/ `visual`（材料欄の目視確認のみ）  |
-| result_memo         | text | 仕上がりメモ（実食時のみ。もちもち感・膨らみ等の所感） |
+| result_memo         | text | 【廃止予定】仕上がりメモ。データは 4.6 reviews へ移行済み。UIが感想表示へ切り替わり次第カラムを削除する |
 
 - (recipe_id, flour_brand_id) に unique 制約
+- レシピに記載のない米粉で作った場合も、このテーブル経由で紐付けて感想を蓄積する（紐付けステータスの再定義は別Issue）
 - 仕上がりタグは下記 4.5 で正規化
 
 ## 4.5 result_tags / recipe_flour_result_tags（仕上がりタグ）※新設
@@ -93,6 +94,18 @@
 | recipe_flour_result_tags | map_id, tag_id | 紐付け（多対多）                        |
 
 絞り込み軸として使うためマスタ化。MVPでは `result_memo` のみで始め、タグは後追いでも可。
+
+## 4.6 reviews（感想）※新設
+| カラム      | 型   | 説明                                                                 |
+| ----------- | ---- | -------------------------------------------------------------------- |
+| map_id      | uuid | FK → recipe_flour_map（1つの紐付けに複数の感想を蓄積できる）         |
+| body        | text | 感想本文（もちもち感・膨らみ等の所感）                               |
+| flour_tips  | text | その米粉で作る際の工夫コメント（吸水調整などのTips、任意）           |
+| author_name | text | 投稿者の表示名（当面は「運営者」固定）                               |
+| author_type | text | `operator`（運営者）/ `user`（一般ユーザー）。将来のユーザー投稿（#52）への布石 |
+
+- 当面の入力者は運営者のみ（RLSは読み取りのみ公開。書き込みはservice_role経由）
+- 旧 `recipe_flour_map.result_memo` のデータはマイグレーションで本テーブルへ移行済み
 
 ## 5. 画面構成
 

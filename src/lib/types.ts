@@ -31,6 +31,18 @@ export type ResultTag = {
   name: string;
 };
 
+export type ReviewAuthorType = "operator" | "user";
+
+/** レシピ×米粉の紐付け（recipe_flour_map）に蓄積される感想 */
+export type Review = {
+  id: string;
+  body: string;
+  flour_tips: string | null;
+  author_name: string;
+  author_type: ReviewAuthorType;
+  created_at: string;
+};
+
 /** レシピに埋め込まれる使用銘柄（recipe_flour_map 経由） */
 export type RecipeFlour = {
   verification_status: VerificationStatus;
@@ -45,6 +57,7 @@ export type RecipeFlour = {
     | "is_discontinued"
   > | null;
   tags: { tag: ResultTag | null }[];
+  reviews: Review[];
 };
 
 export type Recipe = {
@@ -63,6 +76,7 @@ export type Recipe = {
 export type BrandRecipe = {
   verification_status: VerificationStatus;
   result_memo: string | null;
+  reviews: Review[];
   recipe: {
     id: string;
     title: string;
