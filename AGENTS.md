@@ -1,6 +1,9 @@
+<!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+<!-- END:nextjs-agent-rules -->
+
 # システム構成
 
 システム全体の構成図とディレクトリ構成・配置指針は `docs/architecture.md` を参照。
