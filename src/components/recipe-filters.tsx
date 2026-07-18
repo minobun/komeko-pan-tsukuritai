@@ -3,10 +3,12 @@
 // WBS 5.4: レシピ一覧の絞り込み（メーカー／パン種別／グルテンフリー有無）。
 // データはISRで全件取得済みのため、絞り込みはクライアント側で行い、
 // 条件はURLクエリに同期して共有可能にする。
+// 絞り込みの判定ロジックは src/lib/filters.ts 側に置く。
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
-import { isGlutenFree, type BreadType, type Recipe } from "@/lib/types";
+import { filterRecipes } from "@/lib/filters";
+import type { BreadType, Recipe } from "@/lib/types";
 import { RecipeGrid } from "./recipe-grid";
 
 type Props = {
@@ -29,18 +31,7 @@ export function RecipeFilters({ recipes, breadTypes, makers }: Props) {
   const hasFilter = maker !== "" || breadType !== "" || glutenFreeOnly;
 
   const filtered = useMemo(
-    () =>
-      recipes.filter((recipe) => {
-        if (
-          maker &&
-          !recipe.flours.some((f) => f.brand?.maker_name === maker)
-        ) {
-          return false;
-        }
-        if (breadType && recipe.bread_type?.name !== breadType) return false;
-        if (glutenFreeOnly && !isGlutenFree(recipe)) return false;
-        return true;
-      }),
+    () => filterRecipes(recipes, { maker, breadType, glutenFreeOnly }),
     [recipes, maker, breadType, glutenFreeOnly],
   );
 

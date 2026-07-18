@@ -2,22 +2,16 @@
 
 // WBS 5.5: 銘柄一覧の絞り込み（グルテン／サイリウム）。
 // レシピ一覧と同様、クライアント側で絞り込み、条件をURLクエリに同期する。
+// 絞り込みの判定ロジックは src/lib/filters.ts 側に置く。
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
+import { filterBrands, type TriState } from "@/lib/filters";
 import type { FlourBrand } from "@/lib/types";
 import { BrandGrid } from "./brand-grid";
 
 const selectClass =
   "rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-700";
-
-type TriState = "" | "with" | "without";
-
-function matchesTriState(state: TriState, value: boolean): boolean {
-  if (state === "with") return value;
-  if (state === "without") return !value;
-  return true;
-}
 
 export function BrandFilters({ brands }: { brands: FlourBrand[] }) {
   const router = useRouter();
@@ -29,12 +23,7 @@ export function BrandFilters({ brands }: { brands: FlourBrand[] }) {
   const hasFilter = gluten !== "" || psyllium !== "";
 
   const filtered = useMemo(
-    () =>
-      brands.filter(
-        (brand) =>
-          matchesTriState(gluten, brand.has_gluten) &&
-          matchesTriState(psyllium, brand.has_psyllium),
-      ),
+    () => filterBrands(brands, { gluten, psyllium }),
     [brands, gluten, psyllium],
   );
 
