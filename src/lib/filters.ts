@@ -18,7 +18,7 @@ export function matchesRecipeFilter(
 ): boolean {
   if (
     cond.maker &&
-    !recipe.flours.some((f) => f.brand?.maker_name === cond.maker)
+    !recipe.flours.some((f) => f.brand?.maker?.name === cond.maker)
   ) {
     return false;
   }

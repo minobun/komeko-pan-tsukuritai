@@ -5,6 +5,7 @@ import { JsonLd } from "@/components/json-ld";
 import { getFlourBrands } from "@/lib/data";
 import { buildPageMetadata } from "@/lib/metadata";
 import { buildItemListSchema } from "@/lib/structured-data";
+import { formatBrandName } from "@/lib/types";
 
 export const revalidate = 3600;
 
@@ -24,7 +25,7 @@ export default async function BrandsPage() {
         data={buildItemListSchema(
           "米粉銘柄一覧",
           brands.map((brand) => ({
-            name: `${brand.maker_name} ${brand.product_name}`,
+            name: formatBrandName(brand),
             path: `/brands/${brand.id}`,
           })),
         )}

@@ -2,6 +2,7 @@
 // （将来の公開API転用を見据える。docs/mvp/spec.md §7-3）
 
 import { getSupabaseClient } from "./supabase";
+import { compareBrandsByName } from "./types";
 import type { BrandRecipe, BreadType, FlourBrand, Recipe } from "./types";
 
 // PostgRESTはuuid以外のidを400で弾くため、詳細系は事前に形式チェックして404扱いにする
@@ -10,13 +11,18 @@ const UUID_RE =
 
 const REVIEW_SELECT = `reviews:reviews(id, body, flour_tips, author_name, author_type, created_at)`;
 
+/** メーカーはマスタ（makers）にあるため、銘柄取得時は常に埋め込む */
+const MAKER_SELECT = `maker:makers(id, name)`;
+
+const BRAND_SELECT = `*, ${MAKER_SELECT}`;
+
 const RECIPE_SELECT = `
   id, title, url, site_name, author_name, memo,
   uses_psyllium, uses_gluten, uses_oil, created_at,
   bread_type:bread_types(id, name),
   flours:recipe_flour_map(
     link_status, result_memo,
-    brand:flour_brands(id, maker_name, product_name, has_gluten, has_psyllium, is_discontinued),
+    brand:flour_brands(id, product_name, has_gluten, has_psyllium, is_discontinued, ${MAKER_SELECT}),
     tags:recipe_flour_result_tags(tag:result_tags(id, name)),
     ${REVIEW_SELECT}
   )
@@ -93,11 +99,12 @@ export async function getFlourBrands(): Promise<FlourBrand[]> {
   return withFallback("getFlourBrands", [], async () => {
     const { data, error } = await getSupabaseClient()
       .from("flour_brands")
-      .select("*")
-      .order("maker_name")
-      .order("product_name");
+      .select(BRAND_SELECT);
     if (error) throw new Error(`getFlourBrands failed: ${error.message}`);
-    return (data ?? []) as FlourBrand[];
+    // メーカー名は埋め込みカラムのためDB側で並べ替えられず、取得後に整列する
+    return ((data ?? []) as unknown as FlourBrand[])
+      .slice()
+      .sort(compareBrandsByName);
   });
 }
 
@@ -105,12 +112,12 @@ export async function getFeaturedBrands(limit: number): Promise<FlourBrand[]> {
   return withFallback("getFeaturedBrands", [], async () => {
     const { data, error } = await getSupabaseClient()
       .from("flour_brands")
-      .select("*")
+      .select(BRAND_SELECT)
       .eq("is_discontinued", false)
       .order("created_at", { ascending: false })
       .limit(limit);
     if (error) throw new Error(`getFeaturedBrands failed: ${error.message}`);
-    return (data ?? []) as FlourBrand[];
+    return (data ?? []) as unknown as FlourBrand[];
   });
 }
 
@@ -121,11 +128,11 @@ export async function getFlourBrandById(
   return withFallback("getFlourBrandById", null, async () => {
     const { data, error } = await getSupabaseClient()
       .from("flour_brands")
-      .select("*")
+      .select(BRAND_SELECT)
       .eq("id", id)
       .maybeSingle();
     if (error) throw new Error(`getFlourBrandById failed: ${error.message}`);
-    return data as FlourBrand | null;
+    return data as unknown as FlourBrand | null;
   });
 }
 

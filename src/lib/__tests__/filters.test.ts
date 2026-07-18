@@ -14,7 +14,7 @@ function makeFlour(
     result_memo: null,
     brand: {
       id: "brand-1",
-      maker_name: "テスト製粉",
+      maker: { id: "maker-1", name: "テスト製粉" },
       product_name: "テスト米粉",
       has_gluten: false,
       has_psyllium: false,
@@ -47,7 +47,7 @@ function makeRecipe(overrides: Partial<Recipe> = {}): Recipe {
 function makeBrand(overrides: Partial<FlourBrand> = {}): FlourBrand {
   return {
     id: "brand-1",
-    maker_name: "テスト製粉",
+    maker: { id: "maker-1", name: "テスト製粉" },
     product_name: "テスト米粉",
     is_bread_use: true,
     has_gluten: false,
@@ -76,7 +76,7 @@ describe("filterRecipes", () => {
   it("メーカー名が一致する銘柄を使うレシピだけ残す", () => {
     const target = makeRecipe({
       id: "recipe-2",
-      flours: [makeFlour({ maker_name: "波里" })],
+      flours: [makeFlour({ maker: { id: "maker-2", name: "波里" } })],
     });
     const recipes = [makeRecipe(), target];
     expect(filterRecipes(recipes, { ...noFilter, maker: "波里" })).toEqual([
@@ -127,12 +127,12 @@ describe("filterRecipes", () => {
   it("複数条件はAND（すべて満たすレシピのみ残る）", () => {
     const match = makeRecipe({
       id: "recipe-2",
-      flours: [makeFlour({ maker_name: "波里" })],
+      flours: [makeFlour({ maker: { id: "maker-2", name: "波里" } })],
     });
     const makerOnly = makeRecipe({
       id: "recipe-3",
       bread_type: { id: "bt-2", name: "丸パン" },
-      flours: [makeFlour({ maker_name: "波里" })],
+      flours: [makeFlour({ maker: { id: "maker-2", name: "波里" } })],
     });
     expect(
       filterRecipes([match, makerOnly, makeRecipe()], {

@@ -67,7 +67,7 @@
 ## 4.3 flour_brands（米粉銘柄マスタ）
 | カラム               | 型      | 説明                                                     |
 | -------------------- | ------- | -------------------------------------------------------- |
-| maker_name           | text    | メーカー名                                               |
+| maker_id             | uuid    | FK → makers（4.7）                                       |
 | product_name         | text    | 商品名                                                   |
 | is_bread_use         | boolean | 製パン用かどうか                                         |
 | has_gluten           | boolean | グルテン入りかどうか                                     |
@@ -80,6 +80,9 @@
 | purchase_url_rakuten | text    | 購入リンク（アフィリエイト、任意）                       |
 | is_discontinued      | boolean | 廃番フラグ（米粉はリニューアル・終売が多い）             |
 | note                 | text    | 銘柄解説（特徴・向いているパン等。銘柄詳細ページの本文） |
+
+- メーカー名は表記ゆれ（「◯◯製粉」「◯◯製粉株式会社」）を防ぎ会社単位で扱えるよう、
+  文字列直接入力ではなく 4.7 makers への参照（`maker_id`）として持つ
 
 ## 4.4 recipe_flour_map（紐付け）
 | カラム              | 型   | 説明                                                   |
@@ -118,6 +121,16 @@
 
 - 当面の入力者は運営者のみ（RLSは読み取りのみ公開。書き込みはservice_role経由）
 - 旧 `recipe_flour_map.result_memo` のデータはマイグレーションで本テーブルへ移行済み
+
+## 4.7 makers（メーカーマスタ）※新設
+| カラム       | 型   | 説明                                     |
+| ------------ | ---- | ---------------------------------------- |
+| name         | text | メーカー名（unique）                     |
+| official_url | text | メーカー公式サイト（任意）               |
+
+- `flour_brands.maker_id` から参照する。同じ会社の銘柄が複数あるため、表記ゆれを防ぎ
+  会社単位での集計・表示を可能にする目的でマスタ化した（旧 `flour_brands.maker_name`）
+- 銘柄の `official_url` は商品ページ、`makers.official_url` は会社サイトを指す
 
 ## 5. 画面構成
 

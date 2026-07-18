@@ -12,6 +12,7 @@ import {
   buildRecipeBrandListSchema,
 } from "@/lib/structured-data";
 import {
+  formatBrandName,
   getRecipeIngredientUsages,
   hasBakedReview,
   isGlutenFree,
@@ -149,7 +150,7 @@ export default async function RecipeDetailPage({ params }: Props) {
                         href={`/brands/${flour.brand.id}`}
                         className="font-semibold text-amber-900 hover:underline"
                       >
-                        {flour.brand.maker_name} {flour.brand.product_name}
+                        {formatBrandName(flour.brand)}
                       </Link>
                     ) : (
                       <span className="font-semibold text-stone-500">
