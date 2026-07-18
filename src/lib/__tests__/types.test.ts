@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import {
   compareBrandsByName,
   countReviews,
@@ -16,6 +15,7 @@ import {
   type RecipeFlour,
   type Review,
 } from "@/lib/types";
+import { describe, expect, it } from "vitest";
 
 function makeBrandRecipe(overrides: Partial<BrandRecipe> = {}): BrandRecipe {
   return {
@@ -211,6 +211,9 @@ describe("countReviews", () => {
 
   it("銘柄が未紐付け（floursが空）なら0", () => {
     expect(countReviews(makeRecipe([]))).toBe(0);
+  });
+});
+
 describe("getListedFlours", () => {
   it("「銘柄指定あり」「目視で確認可能」だけをレシピに記載のある米粉として返す", () => {
     const specified = makeFlour();
