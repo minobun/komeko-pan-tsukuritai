@@ -188,7 +188,7 @@ export default async function RecipeDetailPage({ params }: Props) {
           </ul>
         )}
         <p className="mt-4 text-xs text-stone-500">
-          銘柄の紐付けは運営者による独自調査（実食確認または材料欄の目視確認）に基づきます。誤りのご指摘は
+          銘柄の紐付けは運営者による独自調査（レシピ内の目視確認）に基づきます。誤りのご指摘は
           <Link href="/about" className="text-amber-800 hover:underline">
             お問い合わせ窓口
           </Link>
