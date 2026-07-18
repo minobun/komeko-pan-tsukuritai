@@ -1,5 +1,21 @@
 # Supabase
 
+## マイグレーション作成
+
+ファイルは必ず次のコマンドで作成する（ファイル名を手で決めない）。
+
+```
+npx supabase migration new <name>
+```
+
+先頭のタイムスタンプが適用順（バージョン）になるため、**既存のどのマイグレーションよりも新しい値**でなければならない。
+手で命名して既適用より古いバージョンを作ると、
+
+- まっさらなDBでは依存関係より先に流れて失敗する（例: 参照先テーブルがまだ無い）
+- 適用済みのDBには out-of-order として適用されない
+
+という状態になる（実例: #79）。
+
 ## マイグレーション適用
 
 ```
@@ -8,6 +24,8 @@ npx supabase db push
 ```
 
 `<project-ref>` は `.env.local` の `NEXT_PUBLIC_SUPABASE_URL`（`https://<project-ref>.supabase.co`）から確認できる。
+
+適用後は `npm run build` でデータ取得が成功する（`[data] ... failed, falling back` が出ない）ことを確認する。
 
 ## データ入力手段（WBS 3.4）
 
