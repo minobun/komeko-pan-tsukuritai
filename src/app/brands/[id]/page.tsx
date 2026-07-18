@@ -18,7 +18,7 @@ import {
 } from "@/lib/data";
 import { formatBrandName, getMakerName } from "@/lib/types";
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 type Props = { params: Promise<{ id: string }> };
 

@@ -5,8 +5,8 @@ import { RecipeCard } from "@/components/recipe-card";
 import { getFeaturedBrands, getLatestRecipes } from "@/lib/data";
 import { buildWebSiteSchema } from "@/lib/structured-data";
 
-// ISR: ビルド時＋1時間ごと（または手動revalidate）にのみDBへアクセスする
-export const revalidate = 3600;
+// ISR: ビルド時＋5分ごと（または手動revalidate）にのみDBへアクセスする
+export const revalidate = 300;
 
 function SectionHeading({
   title,
