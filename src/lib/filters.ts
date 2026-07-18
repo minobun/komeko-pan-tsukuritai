@@ -4,6 +4,7 @@
 
 import {
   isGlutenFree,
+  type BrandRecipe,
   type FlourBrand,
   type Recipe,
   type ReviewEntry,
@@ -57,6 +58,15 @@ export function filterReviewEntriesByBrand(
 ): ReviewEntry[] {
   if (!brandId) return entries;
   return entries.filter((entry) => entry.brand?.id === brandId);
+}
+
+/** 銘柄詳細の作れるレシピを「パン種別」で絞り込む。空文字は「すべて」 */
+export function filterBrandRecipesByBreadType(
+  rows: BrandRecipe[],
+  breadType: string,
+): BrandRecipe[] {
+  if (!breadType) return rows;
+  return rows.filter((row) => row.recipe?.bread_type?.name === breadType);
 }
 
 export type BrandFilterCondition = {
