@@ -6,7 +6,7 @@ export function SiteFooter() {
     <footer className="mt-auto border-t border-amber-100 bg-white">
       <div className="mx-auto max-w-5xl px-4 py-8 text-sm text-stone-500 sm:px-6">
         <p>
-          当サイトのレシピと米粉銘柄の紐付け情報は、運営者による独自調査・実食確認に基づくものです。レシピ本文・写真は転載せず、各レシピサイトへのリンクを掲載しています。
+          当サイトのレシピと米粉銘柄の紐付け情報は、運営者による独自調査（レシピ内の目視確認）に基づくものです。レシピ本文・写真は転載せず、各レシピサイトへのリンクを掲載しています。
         </p>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
           <ul className="flex flex-wrap gap-4">

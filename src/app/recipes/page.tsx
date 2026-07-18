@@ -11,7 +11,7 @@ export const revalidate = 3600;
 export const metadata = buildPageMetadata({
   title: "米粉パンレシピ一覧｜使用米粉の銘柄つき",
   description:
-    "米粉パンのレシピ一覧。使用している米粉のメーカー・パン種別（食パン／丸パン等）・グルテンフリーの有無で絞り込めます。銘柄の紐付けは実食確認または材料欄の目視確認によるものです。",
+    "米粉パンのレシピ一覧。使用している米粉のメーカー・パン種別（食パン／丸パン等）・グルテンフリーの有無で絞り込めます。銘柄の紐付けは運営者の独自調査（レシピ内の目視確認）によるものです。",
   path: "/recipes",
 });
 
@@ -42,7 +42,7 @@ export default async function RecipesPage() {
       />
       <h1 className="text-2xl font-bold text-stone-900">米粉パンレシピ一覧</h1>
       <p className="mt-2 text-sm text-stone-600">
-        レシピはすべて外部サイトへのリンクです。銘柄の紐付けは運営者の独自調査・実食確認によるものです。
+        レシピはすべて外部サイトへのリンクです。銘柄の紐付けは運営者の独自調査（レシピ内の目視確認）によるものです。
       </p>
       <div className="mt-6">
         {/* useSearchParamsを使う絞り込みUIはハイドレーション後に有効化される。
