@@ -4,7 +4,7 @@ import { getFlourBrands, getRecipes } from "@/lib/data";
 import { absoluteUrl } from "@/lib/site";
 
 // 一覧ページと同じ間隔でDBを見に行く（Supabase Free休止対策、docs/mvp/spec.md §6）
-export const revalidate = 3600;
+export const revalidate = 300;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [recipes, brands] = await Promise.all([getRecipes(), getFlourBrands()]);
