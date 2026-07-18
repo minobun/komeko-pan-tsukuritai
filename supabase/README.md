@@ -38,7 +38,7 @@ edge-runtime script produced no output: ... Failed to read certificate file
 ```
 
 - 失敗しているのは適用後の「マイグレーションカタログのキャッシュ」処理のみ。これは
-  pg-delta（宣言的スキーマ管理・allpha版）の `db diff` 高速化用キャッシュで、
+  pg-delta（宣言的スキーマ管理・alpha版）の `db diff` 高速化用キャッシュで、
   本リポジトリの運用（通常のマイグレーションファイル + `db push`）では使われない。
 - 原因はCLI側: ホストで生成した証明書（`supabase/.temp/pgdelta/`）が、pg-deltaを実行する
   edge-runtimeコンテナ内のパスから見えていない（CLI 2.109.1 + pg-delta 1.0.0-alpha.27）。
