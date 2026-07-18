@@ -3,10 +3,11 @@
 
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
+import { env } from "@/lib/env";
 import { SUPABASE_CACHE_TAG } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
-  const secret = process.env.REVALIDATE_SECRET;
+  const secret = env.REVALIDATE_SECRET;
   if (!secret || request.nextUrl.searchParams.get("secret") !== secret) {
     return NextResponse.json({ message: "invalid secret" }, { status: 401 });
   }
