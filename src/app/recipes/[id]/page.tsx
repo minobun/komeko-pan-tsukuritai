@@ -5,6 +5,7 @@ import { BakedBadge } from "@/components/baked-badge";
 import { IngredientUsageList } from "@/components/ingredient-usage-list";
 import { JsonLd } from "@/components/json-ld";
 import { LinkStatusBadge } from "@/components/link-status-badge";
+import { RecipeReviewList } from "@/components/recipe-review-list";
 import { getRecipeById, getRecipes } from "@/lib/data";
 import { buildPageMetadata } from "@/lib/metadata";
 import {
@@ -13,7 +14,9 @@ import {
 } from "@/lib/structured-data";
 import {
   formatBrandName,
+  getListedFlours,
   getRecipeIngredientUsages,
+  getReviewEntries,
   hasBakedReview,
   isGlutenFree,
 } from "@/lib/types";
@@ -62,6 +65,9 @@ export default async function RecipeDetailPage({ params }: Props) {
   const recipe = await getRecipeById(id);
   if (!recipe) notFound();
 
+  const listedFlours = getListedFlours(recipe);
+  const reviewEntries = getReviewEntries(recipe);
+
   return (
     <article>
       <JsonLd data={buildRecipeBrandListSchema(recipe)} />
@@ -100,9 +106,13 @@ export default async function RecipeDetailPage({ params }: Props) {
       </p>
 
       {recipe.memo && (
-        <p className="mt-4 whitespace-pre-wrap rounded-lg bg-white p-4 text-sm leading-relaxed text-stone-700 shadow-sm">
-          {recipe.memo}
-        </p>
+        <section className="mt-4 rounded-lg bg-white p-4 shadow-sm">
+          {/* 誰の発言か分かるよう「運営者のコメント」であることを明示する（issue #66） */}
+          <h2 className="text-sm font-bold text-stone-900">運営者のコメント</h2>
+          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-stone-700">
+            {recipe.memo}
+          </p>
+        </section>
       )}
 
       <section className="mt-6">
@@ -129,15 +139,22 @@ export default async function RecipeDetailPage({ params }: Props) {
         </p>
       </div>
 
+      {/* レシピに記載のある米粉と、作った感想は性質が異なる情報なので
+          別セクションに分けて表示する（issue #66） */}
       <section className="mt-10">
-        <h2 className="text-lg font-bold text-stone-900">使用されている米粉銘柄</h2>
-        {recipe.flours.length === 0 ? (
+        <h2 className="text-lg font-bold text-stone-900">
+          レシピに記載のある米粉
+        </h2>
+        <p className="mt-1 text-xs text-stone-500">
+          レシピ本文に銘柄の指定があるもの、または写真・動画から銘柄を目視で確認できたものです。
+        </p>
+        {listedFlours.length === 0 ? (
           <p className="mt-3 text-sm text-stone-500">
-            銘柄情報は現在調査中です。
+            レシピに記載のある銘柄は確認できていません（調査中の場合があります）。
           </p>
         ) : (
           <ul className="mt-4 space-y-3">
-            {recipe.flours.map((flour, index) => {
+            {listedFlours.map((flour, index) => {
               const tags = flour.tags.flatMap((t) => (t.tag ? [t.tag] : []));
               return (
                 <li
@@ -194,6 +211,16 @@ export default async function RecipeDetailPage({ params }: Props) {
           </Link>
           までお寄せください。
         </p>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-lg font-bold text-stone-900">
+          このレシピで作った感想
+        </h2>
+        <p className="mt-1 text-xs text-stone-500">
+          レシピに記載のない米粉で作った感想も含みます。
+        </p>
+        <RecipeReviewList entries={reviewEntries} />
       </section>
     </article>
   );

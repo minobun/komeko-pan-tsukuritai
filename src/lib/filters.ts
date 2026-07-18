@@ -2,7 +2,12 @@
 // URLクエリとの同期などUI都合はコンポーネント側に残し、
 // 判定ロジックだけをここに置いてユニットテスト可能にする。
 
-import { isGlutenFree, type FlourBrand, type Recipe } from "./types";
+import {
+  isGlutenFree,
+  type FlourBrand,
+  type Recipe,
+  type ReviewEntry,
+} from "./types";
 
 export type RecipeFilterCondition = {
   /** メーカー名。空文字は「すべて」 */
@@ -43,6 +48,15 @@ export function matchesTriState(state: TriState, value: boolean): boolean {
   if (state === "with") return value;
   if (state === "without") return !value;
   return true;
+}
+
+/** レシピ詳細の感想を「使った銘柄」で絞り込む。空文字は「すべて」 */
+export function filterReviewEntriesByBrand(
+  entries: ReviewEntry[],
+  brandId: string,
+): ReviewEntry[] {
+  if (!brandId) return entries;
+  return entries.filter((entry) => entry.brand?.id === brandId);
 }
 
 export type BrandFilterCondition = {
