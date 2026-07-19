@@ -1,14 +1,14 @@
 import Link from "next/link";
 import type { BrandRecipe } from "@/lib/types";
 import { BakedBadge } from "./baked-badge";
-import { LinkStatusBadge } from "./link-status-badge";
+import { SpecifiedFlourBadge } from "./specified-flour-badge";
 
 /**
- * 銘柄詳細の逆引きレシピ1件。「銘柄指定なし」（レシピに記載はないが作った実績がある）
- * の行は「作れるかも？」バッジで通常の紐付けと区別する（issue #67）。
+ * 銘柄詳細の逆引きレシピ1件。レシピ本文に記載がない（＝紐付けだけの）行は
+ * 「作れるかも？」バッジでレシピ公式の銘柄と区別する（issue #67 / #94）。
  */
 export function BrandRecipeCard({ row }: { row: BrandRecipe }) {
-  const { recipe, link_status, result_memo, reviews } = row;
+  const { recipe, specified_source, result_memo, reviews } = row;
   if (!recipe) return null;
   return (
     <Link
@@ -21,12 +21,12 @@ export function BrandRecipeCard({ row }: { row: BrandRecipe }) {
             {recipe.bread_type.name}
           </span>
         )}
-        {link_status === "brand_unspecified" ? (
+        {specified_source === null ? (
           <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
             作れるかも？
           </span>
         ) : (
-          <LinkStatusBadge status={link_status} />
+          <SpecifiedFlourBadge source={specified_source} />
         )}
         {reviews.length > 0 && <BakedBadge />}
       </div>

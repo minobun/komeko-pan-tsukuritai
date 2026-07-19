@@ -1,5 +1,5 @@
 import { BakedBadge } from "@/components/baked-badge";
-import { LinkStatusBadge } from "@/components/link-status-badge";
+import { SpecifiedFlourBadge } from "@/components/specified-flour-badge";
 import { buildPageMetadata } from "@/lib/metadata";
 import { CONTACT_FORM_URL, SITE_NAME } from "@/lib/site";
 
@@ -33,19 +33,23 @@ export default function AboutPage() {
             レシピ本文・写真は転載していません。掲載しているのは外部レシピへのリンクと、著作者名・掲載サイト名、および運営者による独自調査の情報（使用銘柄・実食メモ）のみです。
           </li>
           <li>
-            レシピと銘柄の紐付けには、その根拠を明示しています。
+            レシピに記載のある銘柄には、その記載根拠を明示しています。
             <span className="mx-1 inline-flex align-middle">
-              <LinkStatusBadge status="brand_specified" />
+              <SpecifiedFlourBadge source="text" />
             </span>
             はレシピ本文に銘柄の指定が明記されているもの、
             <span className="mx-1 inline-flex align-middle">
-              <LinkStatusBadge status="visually_identified" />
+              <SpecifiedFlourBadge source="visual" />
             </span>
-            はレシピの写真・動画等から銘柄が目視で確認できるもの、
-            <span className="mx-1 inline-flex align-middle">
-              <LinkStatusBadge status="brand_unspecified" />
+            はレシピの写真・動画等から銘柄が目視で確認できるものです。
+          </li>
+          <li>
+            <span className="mr-1 inline-flex align-middle">
+              <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
+                作れるかも？
+              </span>
             </span>
-            はレシピに銘柄の記載はないものの、運営者がその米粉で作った実績があるものです。
+            はレシピに銘柄の記載はないものの、運営者がその米粉でも作れると考えて独自に紐付けたものです。レシピ側が指定している銘柄ではありません。
           </li>
           <li>
             <span className="mr-1 inline-flex align-middle">

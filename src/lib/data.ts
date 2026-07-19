@@ -2,8 +2,15 @@
 // （将来の公開API転用を見据える。docs/mvp/spec.md §7-3）
 
 import { getSupabaseClient } from "./supabase";
-import { compareBrandsByName } from "./types";
-import type { BrandRecipe, BreadType, FlourBrand, Recipe } from "./types";
+import { compareBrandsByName, mergeBrandRecipes } from "./types";
+import type {
+  BrandRecipe,
+  BrandRecipeLinkRow,
+  BrandRecipeSpecifiedRow,
+  BreadType,
+  FlourBrand,
+  Recipe,
+} from "./types";
 
 // PostgRESTはuuid以外のidを400で弾くため、詳細系は事前に形式チェックして404扱いにする
 const UUID_RE =
@@ -16,15 +23,24 @@ const MAKER_SELECT = `maker:makers(id, name)`;
 
 const BRAND_SELECT = `*, ${MAKER_SELECT}`;
 
+/** レシピ詳細・一覧で銘柄を表示するのに必要なフィールド */
+const RECIPE_BRAND_SELECT = `brand:flour_brands(id, product_name, has_gluten, has_psyllium, is_discontinued, ${MAKER_SELECT})`;
+
+// 「レシピが記載している米粉」（specified_flours）と「サイト独自の紐付け」（flours）は
+// 別の事実なので、それぞれ別テーブルから取得する（spec §4.4 / §4.5）
 const RECIPE_SELECT = `
   id, title, url, site_name, author_name, memo,
   uses_psyllium, uses_gluten, uses_oil, created_at,
   bread_type:bread_types(id, name),
   flours:recipe_flour_map(
-    link_status, result_memo,
-    brand:flour_brands(id, product_name, has_gluten, has_psyllium, is_discontinued, ${MAKER_SELECT}),
+    result_memo,
+    ${RECIPE_BRAND_SELECT},
     tags:recipe_flour_result_tags(tag:result_tags(id, name)),
     ${REVIEW_SELECT}
+  ),
+  specified_flours:recipe_specified_flours(
+    source,
+    ${RECIPE_BRAND_SELECT}
   )
 `;
 
@@ -164,29 +180,42 @@ export async function getBrandReviewCounts(): Promise<Record<string, number>> {
   });
 }
 
-/** 銘柄詳細の逆引き：その銘柄を使う公開中レシピの一覧 */
+const BRAND_RECIPE_SELECT = `
+  recipe:recipes(
+    id, title, site_name, author_name, status, created_at,
+    bread_type:bread_types(id, name)
+  )
+`;
+
+/**
+ * 銘柄詳細の逆引き：その銘柄を使う公開中レシピの一覧。
+ * 紐付け（4.4）と レシピ記載（4.5）は別テーブルなので両方引いて和集合を取る。
+ */
 export async function getRecipesByBrandId(
   brandId: string,
 ): Promise<BrandRecipe[]> {
   if (!UUID_RE.test(brandId)) return [];
   return withFallback("getRecipesByBrandId", [], async () => {
-    const { data, error } = await getSupabaseClient()
-      .from("recipe_flour_map")
-      .select(
-        `
-        link_status, result_memo,
-        ${REVIEW_SELECT},
-        recipe:recipes(
-          id, title, site_name, author_name, status, created_at,
-          bread_type:bread_types(id, name)
-        )
-      `,
-      )
-      .eq("flour_brand_id", brandId);
-    if (error) throw new Error(`getRecipesByBrandId failed: ${error.message}`);
-    const rows = (data ?? []) as unknown as BrandRecipe[];
-    return rows
-      .filter((row) => row.recipe !== null && row.recipe.status === "published")
-      .sort((a, b) => (a.recipe!.created_at < b.recipe!.created_at ? 1 : -1));
+    const client = getSupabaseClient();
+    const [links, specified] = await Promise.all([
+      client
+        .from("recipe_flour_map")
+        .select(`result_memo, ${REVIEW_SELECT}, ${BRAND_RECIPE_SELECT}`)
+        .eq("flour_brand_id", brandId),
+      client
+        .from("recipe_specified_flours")
+        .select(`source, ${BRAND_RECIPE_SELECT}`)
+        .eq("flour_brand_id", brandId),
+    ]);
+    if (links.error) {
+      throw new Error(`getRecipesByBrandId failed: ${links.error.message}`);
+    }
+    if (specified.error) {
+      throw new Error(`getRecipesByBrandId failed: ${specified.error.message}`);
+    }
+    return mergeBrandRecipes(
+      (links.data ?? []) as unknown as BrandRecipeLinkRow[],
+      (specified.data ?? []) as unknown as BrandRecipeSpecifiedRow[],
+    );
   });
 }

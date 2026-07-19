@@ -4,7 +4,7 @@
 // 銘柄は Product、一覧は ItemList、パンくずは BreadcrumbList のみを出す。
 
 import { absoluteUrl, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "./site";
-import { formatBrandName, getMakerName } from "./types";
+import { formatBrandName, getListedFlours, getMakerName } from "./types";
 import type { BrandRecipe, FlourBrand, Recipe } from "./types";
 
 /** トップページに出すサイト全体の定義 */
@@ -91,9 +91,15 @@ export function buildBrandProductSchema(
   };
 }
 
-/** レシピ詳細で「そのレシピが使っている銘柄」をItemListとして出す */
+/**
+ * レシピ詳細で「そのレシピが使っている銘柄」をItemListとして出す。
+ * 独自に紐付けただけの銘柄はレシピが使っているとは限らないため、
+ * レシピ記載の銘柄（4.5）だけを載せる（issue #94）。
+ */
 export function buildRecipeBrandListSchema(recipe: Recipe) {
-  const brands = recipe.flours.flatMap((f) => (f.brand ? [f.brand] : []));
+  const brands = getListedFlours(recipe).flatMap((f) =>
+    f.brand ? [f.brand] : [],
+  );
   return buildItemListSchema(
     `${recipe.title}で使われている米粉銘柄`,
     brands.map((brand) => ({

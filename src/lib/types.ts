@@ -6,7 +6,7 @@ export type BreadType = {
   sort_order: number;
 };
 
-/** メーカー（製造会社）マスタ。spec §4.7 */
+/** メーカー（製造会社）マスタ。spec §4.8 */
 export type Maker = {
   id: string;
   name: string;
@@ -33,16 +33,17 @@ export type FlourBrand = {
 };
 
 /**
- * レシピ×米粉の紐付け根拠（spec §4.4）。
- * 「実食したか」は紐付けの根拠ではなく感想側の情報なので、ここには含めない（{@link hasBakedReview}）。
+ * レシピ本文に記載された米粉の、記載根拠（spec §4.5 recipe_specified_flours）。
+ *
+ * これはレシピが決まれば変わらない静的な事実だけを表す。「この米粉で作った」という
+ * サイト独自の実績は 4.4 recipe_flour_map の紐付けが、「実食したか」は感想の有無が表す
+ * （{@link hasBakedReview}）。
  */
-export type LinkStatus =
+export type SpecifiedFlourSource =
   /** レシピ本文中に銘柄の指定が明記されている */
-  | "brand_specified"
-  /** レシピに銘柄の記載はないが、その米粉で作った実績（感想）がある */
-  | "brand_unspecified"
+  | "text"
   /** レシピの写真・動画等から銘柄が目視で確認できる */
-  | "visually_identified";
+  | "visual";
 
 export type ResultTag = {
   id: string;
@@ -61,21 +62,32 @@ export type Review = {
   created_at: string;
 };
 
-/** レシピに埋め込まれる使用銘柄（recipe_flour_map 経由） */
+/** 表示に必要な銘柄フィールドだけに絞った形（インターフェース分離） */
+export type RecipeBrand = Pick<
+  FlourBrand,
+  | "id"
+  | "maker"
+  | "product_name"
+  | "has_gluten"
+  | "has_psyllium"
+  | "is_discontinued"
+>;
+
+/**
+ * レシピに紐付けた米粉（recipe_flour_map 経由）。根拠を問わないサイト独自の
+ * キュレーションで、感想・仕上がりタグはここにぶら下がる（spec §4.4）。
+ */
 export type RecipeFlour = {
-  link_status: LinkStatus;
   result_memo: string | null;
-  brand: Pick<
-    FlourBrand,
-    | "id"
-    | "maker"
-    | "product_name"
-    | "has_gluten"
-    | "has_psyllium"
-    | "is_discontinued"
-  > | null;
+  brand: RecipeBrand | null;
   tags: { tag: ResultTag | null }[];
   reviews: Review[];
+};
+
+/** レシピ本文に記載されている米粉（recipe_specified_flours 経由。spec §4.5） */
+export type SpecifiedFlour = {
+  source: SpecifiedFlourSource;
+  brand: RecipeBrand | null;
 };
 
 export type Recipe = {
@@ -93,23 +105,33 @@ export type Recipe = {
   uses_oil: boolean | null;
   created_at: string;
   bread_type: Pick<BreadType, "id" | "name"> | null;
+  /** サイト独自の紐付け（4.4）。レシピ記載の有無は問わない */
   flours: RecipeFlour[];
+  /** レシピ本文に記載されている米粉（4.5） */
+  specified_flours: SpecifiedFlour[];
 };
 
-/** 銘柄詳細ページの逆引きレシピ（recipe_flour_map 起点） */
+/** 逆引きで返すレシピの最小情報 */
+export type BrandRecipeSummary = {
+  id: string;
+  title: string;
+  site_name: string;
+  author_name: string;
+  status: string;
+  created_at: string;
+  bread_type: Pick<BreadType, "id" | "name"> | null;
+};
+
+/**
+ * 銘柄詳細ページの逆引きレシピ。4.4 の紐付けと 4.5 の記載を
+ * レシピ単位でまとめた和集合の1行（{@link mergeBrandRecipes}）。
+ */
 export type BrandRecipe = {
-  link_status: LinkStatus;
+  /** レシピ側の記載根拠。レシピに記載がなく紐付けだけの場合は null */
+  specified_source: SpecifiedFlourSource | null;
   result_memo: string | null;
   reviews: Review[];
-  recipe: {
-    id: string;
-    title: string;
-    site_name: string;
-    author_name: string;
-    status: string;
-    created_at: string;
-    bread_type: Pick<BreadType, "id" | "name"> | null;
-  } | null;
+  recipe: BrandRecipeSummary | null;
 };
 
 /** 銘柄が持つメーカー情報の最小単位。表示系の関数はこれだけを受け取る */
@@ -173,8 +195,8 @@ export function getRecipeIngredientUsages(
 }
 
 /**
- * 実食したかどうかは感想（reviews）の有無で表す（spec §4.4/§4.6）。
- * 紐付けステータスは根拠の種類しか表さないので、実食の判定には使わない。
+ * 実食したかどうかは感想（reviews）の有無で表す（spec §4.4/§4.7）。
+ * 紐付けや記載根拠は「作れる」ことしか表さないので、実食の判定には使わない。
  */
 export function hasBakedReview(recipe: Pick<Recipe, "flours">): boolean {
   return recipe.flours.some((f) => f.reviews.length > 0);
@@ -185,13 +207,48 @@ export function countReviews(recipe: Pick<Recipe, "flours">): number {
   return recipe.flours.reduce((sum, f) => sum + f.reviews.length, 0);
 }
 
+/** レシピ詳細に並べる「レシピに記載のある米粉」1件。記載の事実に紐付け側の情報を重ねたもの */
+export type ListedFlour = SpecifiedFlour & {
+  result_memo: string | null;
+  tags: { tag: ResultTag | null }[];
+  reviews: Review[];
+};
+
 /**
- * レシピに記載のある米粉（銘柄指定あり・目視で確認可能）だけを返す。
- * 「銘柄指定なし」はレシピ側の情報ではなく感想側の実績なので、
- * レシピ詳細では感想セクション（{@link getReviewEntries}）で扱う（issue #66）。
+ * レシピに記載のある米粉（4.5）を、同じ銘柄の紐付け（4.4）が持つ感想・メモ・タグを
+ * 重ねて返す。記載外の銘柄で作った感想はレシピ側の情報ではないので、
+ * レシピ詳細では感想セクション（{@link getReviewEntries}）で扱う（issue #66 / #94）。
  */
-export function getListedFlours(recipe: Pick<Recipe, "flours">): RecipeFlour[] {
-  return recipe.flours.filter((f) => f.link_status !== "brand_unspecified");
+export function getListedFlours(
+  recipe: Pick<Recipe, "flours" | "specified_flours">,
+): ListedFlour[] {
+  return recipe.specified_flours.map((specified) => {
+    // 銘柄が取得できていない記載行は結合先を特定できないため、紐付けを重ねない
+    const link = specified.brand
+      ? recipe.flours.find((f) => f.brand?.id === specified.brand!.id)
+      : undefined;
+    return {
+      ...specified,
+      result_memo: link?.result_memo ?? null,
+      tags: link?.tags ?? [],
+      reviews: link?.reviews ?? [],
+    };
+  });
+}
+
+/**
+ * レシピに関係する銘柄（記載＋紐付け）を重複なく返す。
+ * メタデータ・構造化データ・絞り込みなど「このレシピの銘柄」を扱う箇所で使う。
+ */
+export function getRecipeBrands(
+  recipe: Pick<Recipe, "flours" | "specified_flours">,
+): RecipeBrand[] {
+  const brands = [...recipe.specified_flours, ...recipe.flours].flatMap((f) =>
+    f.brand ? [f.brand] : [],
+  );
+  return brands.filter(
+    (brand, i) => brands.findIndex((b) => b.id === brand.id) === i,
+  );
 }
 
 /** 感想1件と、その感想で使った銘柄の組（レシピ詳細の感想セクション用） */
@@ -202,7 +259,7 @@ export type ReviewEntry = {
 
 /**
  * レシピに紐づく全感想を、使った銘柄の情報つきで新しい順に返す。
- * 銘柄指定なしの米粉で作った感想も含む（issue #66）。
+ * レシピ記載外の米粉で作った感想も含む（issue #66）。
  */
 export function getReviewEntries(recipe: Pick<Recipe, "flours">): ReviewEntry[] {
   return recipe.flours
@@ -211,28 +268,82 @@ export function getReviewEntries(recipe: Pick<Recipe, "flours">): ReviewEntry[] 
 }
 
 /**
- * 銘柄詳細の「この銘柄で作れるレシピ」。レシピ側に根拠がある紐付け
- * （銘柄指定あり・目視で確認可能）だけを返す（issue #67）。
+ * 銘柄詳細の「この銘柄で作れるレシピ」。レシピ側に記載の根拠があるものを返す（issue #67）。
  */
 export function getConfirmedBrandRecipes(rows: BrandRecipe[]): BrandRecipe[] {
-  return rows.filter((row) => row.link_status !== "brand_unspecified");
+  return rows.filter((row) => row.specified_source !== null);
 }
 
 /**
- * 銘柄詳細の「作れるかも？」レシピ。レシピに記載はないが、
- * この米粉で作った実績（感想）がある紐付け（銘柄指定なし）を返す（issue #67）。
+ * 銘柄詳細の「作れるかも？」レシピ。レシピ本文に記載はないが、
+ * この米粉で紐付けているもの（＝ 4.5 に対応行がない紐付け）を返す（issue #67 / #94）。
  */
 export function getPossibleBrandRecipes(rows: BrandRecipe[]): BrandRecipe[] {
-  return rows.filter((row) => row.link_status === "brand_unspecified");
+  return rows.filter((row) => row.specified_source === null);
+}
+
+/** 逆引きの元になる recipe_flour_map の行（紐付け側） */
+export type BrandRecipeLinkRow = {
+  result_memo: string | null;
+  reviews: Review[];
+  recipe: BrandRecipeSummary | null;
+};
+
+/** 逆引きの元になる recipe_specified_flours の行（レシピ記載側） */
+export type BrandRecipeSpecifiedRow = {
+  source: SpecifiedFlourSource;
+  recipe: BrandRecipeSummary | null;
+};
+
+/**
+ * 逆引き用に 4.4 の紐付けと 4.5 の記載をレシピ単位でまとめ、公開中のものだけを
+ * 新しい順に返す（spec §4.5「表示・逆引きは 4.4 と 4.5 の和集合を使う」）。
+ *
+ * 同じ (レシピ, 銘柄) が両方に存在しうるため、レシピIDで突き合わせて1行にする。
+ */
+export function mergeBrandRecipes(
+  links: BrandRecipeLinkRow[],
+  specified: BrandRecipeSpecifiedRow[],
+): BrandRecipe[] {
+  const sourceByRecipeId = new Map(
+    specified.flatMap((row) => (row.recipe ? [[row.recipe.id, row]] : [])),
+  );
+  const merged = new Map<string, BrandRecipe>();
+
+  for (const link of links) {
+    if (!link.recipe) continue;
+    merged.set(link.recipe.id, {
+      specified_source: sourceByRecipeId.get(link.recipe.id)?.source ?? null,
+      result_memo: link.result_memo,
+      reviews: link.reviews,
+      recipe: link.recipe,
+    });
+  }
+  // 紐付けがなく記載だけのレシピも「作れるレシピ」として逆引きに出す
+  for (const row of specified) {
+    if (!row.recipe || merged.has(row.recipe.id)) continue;
+    merged.set(row.recipe.id, {
+      specified_source: row.source,
+      result_memo: null,
+      reviews: [],
+      recipe: row.recipe,
+    });
+  }
+
+  return [...merged.values()]
+    .filter((row) => row.recipe!.status === "published")
+    .sort((a, b) => (a.recipe!.created_at < b.recipe!.created_at ? 1 : -1));
 }
 
 /**
- * 紐づく銘柄がすべてグルテンなしのレシピを「グルテンフリー」と扱う。
- * 銘柄未紐付けのレシピは判定不能なので false。
+ * 関係する銘柄（記載＋紐付け）がすべてグルテンなしのレシピを「グルテンフリー」と扱う。
+ * 銘柄が1つもない、または銘柄未取得の行があるレシピは判定不能なので false。
  */
-export function isGlutenFree(recipe: Recipe): boolean {
+export function isGlutenFree(
+  recipe: Pick<Recipe, "flours" | "specified_flours">,
+): boolean {
+  const rows = [...recipe.specified_flours, ...recipe.flours];
   return (
-    recipe.flours.length > 0 &&
-    recipe.flours.every((f) => f.brand !== null && !f.brand.has_gluten)
+    rows.length > 0 && rows.every((f) => f.brand !== null && !f.brand.has_gluten)
   );
 }

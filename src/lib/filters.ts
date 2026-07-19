@@ -3,6 +3,7 @@
 // 判定ロジックだけをここに置いてユニットテスト可能にする。
 
 import {
+  getRecipeBrands,
   isGlutenFree,
   type BrandRecipe,
   type FlourBrand,
@@ -24,9 +25,10 @@ export function matchesRecipeFilter(
   recipe: Recipe,
   cond: RecipeFilterCondition,
 ): boolean {
+  // 記載・紐付けのどちらかにそのメーカーの銘柄があればヒットさせる（issue #94）
   if (
     cond.maker &&
-    !recipe.flours.some((f) => f.brand?.maker?.name === cond.maker)
+    !getRecipeBrands(recipe).some((b) => b.maker?.name === cond.maker)
   ) {
     return false;
   }

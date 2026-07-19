@@ -180,8 +180,8 @@ export default async function BrandDetailPage({ params }: Props) {
         <BrandRecipeList rows={confirmedRecipes} />
       </section>
 
-      {/* レシピに記載のない米粉でも、実際に作った実績（感想）があるものは
-          「作れるかも？」として通常の紐付けと区別して紹介する（issue #67）。
+      {/* レシピ本文に記載のない銘柄でも、この米粉で作れるとして独自に紐付けたものは
+          「作れるかも？」としてレシピ公式の銘柄と区別して紹介する（issue #67 / #94）。
           0件の場合はセクションごと表示しない */}
       {possibleRecipes.length > 0 && (
         <section className="mt-10">
@@ -189,7 +189,8 @@ export default async function BrandDetailPage({ params }: Props) {
             作れるかも？なレシピ（{possibleRecipes.length}件）
           </h2>
           <p className="mt-1 text-xs text-stone-500">
-            レシピに{brand.product_name}の記載はありませんが、この米粉で実際に作った実績（感想）があるレシピです。
+            レシピに{brand.product_name}
+            の記載はありませんが、この米粉でも作れると考えて運営者が紐付けたレシピです。
           </p>
           <ul className="mt-4 space-y-3">
             {possibleRecipes.map((row) => (
