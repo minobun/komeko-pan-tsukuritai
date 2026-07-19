@@ -4,8 +4,8 @@ import { notFound } from "next/navigation";
 import { BakedBadge } from "@/components/baked-badge";
 import { IngredientUsageList } from "@/components/ingredient-usage-list";
 import { JsonLd } from "@/components/json-ld";
-import { LinkStatusBadge } from "@/components/link-status-badge";
 import { RecipeReviewList } from "@/components/recipe-review-list";
+import { SpecifiedFlourBadge } from "@/components/specified-flour-badge";
 import { getRecipeById, getRecipes } from "@/lib/data";
 import { buildPageMetadata } from "@/lib/metadata";
 import {
@@ -37,7 +37,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "レシピが見つかりません", robots: { index: false } };
   }
 
-  const brandNames = recipe.flours
+  // 「使用米粉」と名乗れるのはレシピ自身が記載している銘柄だけ。独自に紐付けた
+  //  銘柄（作れるかも？）はレシピが使っているとは限らないので含めない（issue #94）
+  const brandNames = getListedFlours(recipe)
     .flatMap((f) => (f.brand ? [f.brand.product_name] : []))
     .join("・");
   const breadType = recipe.bread_type?.name;
@@ -174,7 +176,7 @@ export default async function RecipeDetailPage({ params }: Props) {
                         銘柄情報なし
                       </span>
                     )}
-                    <LinkStatusBadge status={flour.link_status} />
+                    <SpecifiedFlourBadge source={flour.source} />
                     {flour.reviews.length > 0 && <BakedBadge />}
                     {flour.brand?.is_discontinued && (
                       <span className="rounded-full border border-red-200 bg-white px-2 py-0.5 text-xs font-medium text-red-600">

@@ -6,20 +6,23 @@ import {
   getListedFlours,
   getMakerName,
   getPossibleBrandRecipes,
+  getRecipeBrands,
   getRecipeIngredientUsages,
   getReviewEntries,
   hasBakedReview,
   isGlutenFree,
+  mergeBrandRecipes,
   type BrandRecipe,
   type Recipe,
   type RecipeFlour,
   type Review,
+  type SpecifiedFlour,
 } from "@/lib/types";
 import { describe, expect, it } from "vitest";
 
 function makeBrandRecipe(overrides: Partial<BrandRecipe> = {}): BrandRecipe {
   return {
-    link_status: "brand_specified",
+    specified_source: "text",
     result_memo: null,
     reviews: [],
     recipe: {
@@ -47,22 +50,33 @@ function makeReview(overrides: Partial<Review> = {}): Review {
   };
 }
 
+function makeBrand(overrides: Partial<RecipeFlour["brand"]> = {}) {
+  return {
+    id: "brand-1",
+    maker: { id: "maker-1", name: "テスト製粉" },
+    product_name: "テスト米粉",
+    has_gluten: false,
+    has_psyllium: false,
+    is_discontinued: false,
+    ...overrides,
+  };
+}
+
 function makeFlour(overrides: Partial<RecipeFlour> = {}): RecipeFlour {
   return {
-    link_status: "brand_specified",
     result_memo: null,
-    brand: {
-      id: "brand-1",
-      maker: { id: "maker-1", name: "テスト製粉" },
-      product_name: "テスト米粉",
-      has_gluten: false,
-      has_psyllium: false,
-      is_discontinued: false,
-    },
+    brand: makeBrand(),
     tags: [],
     reviews: [],
     ...overrides,
   };
+}
+
+/** レシピ本文に記載された米粉（recipe_specified_flours） */
+function makeSpecified(
+  overrides: Partial<SpecifiedFlour> = {},
+): SpecifiedFlour {
+  return { source: "text", brand: makeBrand(), ...overrides };
 }
 
 function makeRecipe(
@@ -82,6 +96,7 @@ function makeRecipe(
     created_at: "2026-01-01T00:00:00Z",
     bread_type: null,
     flours,
+    specified_flours: [],
     ...overrides,
   };
 }
@@ -183,11 +198,10 @@ describe("hasBakedReview", () => {
     expect(hasBakedReview(recipe)).toBe(true);
   });
 
-  it("感想が1件もなければfalse（紐付けステータスは実食の根拠にしない）", () => {
-    const recipe = makeRecipe([
-      makeFlour({ link_status: "brand_unspecified" }),
-      makeFlour({ link_status: "visually_identified" }),
-    ]);
+  it("感想が1件もなければfalse（紐付けの有無は実食の根拠にしない）", () => {
+    const recipe = makeRecipe([makeFlour(), makeFlour()], {
+      specified_flours: [makeSpecified()],
+    });
     expect(hasBakedReview(recipe)).toBe(false);
   });
 
@@ -215,38 +229,108 @@ describe("countReviews", () => {
 });
 
 describe("getListedFlours", () => {
-  it("「銘柄指定あり」「目視で確認可能」だけをレシピに記載のある米粉として返す", () => {
-    const specified = makeFlour();
-    const visual = makeFlour({ link_status: "visually_identified" });
-    const unspecified = makeFlour({ link_status: "brand_unspecified" });
-    const recipe = makeRecipe([specified, visual, unspecified]);
-    expect(getListedFlours(recipe)).toEqual([specified, visual]);
+  it("レシピ記載の米粉（recipe_specified_flours）だけを記載根拠つきで返す", () => {
+    const recipe = makeRecipe([], {
+      specified_flours: [
+        makeSpecified(),
+        makeSpecified({
+          source: "visual",
+          brand: makeBrand({ id: "brand-2", product_name: "別の米粉" }),
+        }),
+      ],
+    });
+    expect(getListedFlours(recipe).map((f) => [f.brand?.id, f.source])).toEqual([
+      ["brand-1", "text"],
+      ["brand-2", "visual"],
+    ]);
   });
 
-  it("該当がなければ空配列", () => {
-    const recipe = makeRecipe([makeFlour({ link_status: "brand_unspecified" })]);
+  it("同じ銘柄の紐付けがあれば、その感想・メモ・タグを重ねて返す", () => {
+    const review = makeReview();
+    const tag = { tag: { id: "tag-1", name: "もちもち" } };
+    const recipe = makeRecipe(
+      [makeFlour({ result_memo: "よく膨らんだ", tags: [tag], reviews: [review] })],
+      { specified_flours: [makeSpecified()] },
+    );
+    expect(getListedFlours(recipe)).toEqual([
+      {
+        source: "text",
+        brand: makeBrand(),
+        result_memo: "よく膨らんだ",
+        tags: [tag],
+        reviews: [review],
+      },
+    ]);
+  });
+
+  it("記載銘柄に紐付けがなければ感想・タグは空、メモはnullになる", () => {
+    const recipe = makeRecipe([], { specified_flours: [makeSpecified()] });
+    expect(getListedFlours(recipe)).toEqual([
+      {
+        source: "text",
+        brand: makeBrand(),
+        result_memo: null,
+        tags: [],
+        reviews: [],
+      },
+    ]);
+  });
+
+  it("紐付けだけの米粉（記載なし）は含めない", () => {
+    const recipe = makeRecipe([makeFlour()]);
     expect(getListedFlours(recipe)).toEqual([]);
+  });
+
+  it("銘柄が取得できていない記載行があっても、紐付けを誤って結合しない", () => {
+    const recipe = makeRecipe([makeFlour({ reviews: [makeReview()] })], {
+      specified_flours: [makeSpecified({ brand: null })],
+    });
+    expect(getListedFlours(recipe)).toEqual([
+      {
+        source: "text",
+        brand: null,
+        result_memo: null,
+        tags: [],
+        reviews: [],
+      },
+    ]);
+  });
+});
+
+describe("getRecipeBrands", () => {
+  it("記載の銘柄と紐付けの銘柄を重複なく返す", () => {
+    const other = makeBrand({ id: "brand-2", product_name: "別の米粉" });
+    const recipe = makeRecipe([makeFlour(), makeFlour({ brand: other })], {
+      specified_flours: [makeSpecified()],
+    });
+    expect(getRecipeBrands(recipe).map((b) => b.id)).toEqual([
+      "brand-1",
+      "brand-2",
+    ]);
+  });
+
+  it("銘柄が取得できていない行は除外する", () => {
+    const recipe = makeRecipe([makeFlour({ brand: null })], {
+      specified_flours: [makeSpecified({ brand: null })],
+    });
+    expect(getRecipeBrands(recipe)).toEqual([]);
   });
 });
 
 describe("getReviewEntries", () => {
-  it("全銘柄の感想を銘柄情報つきでフラットに返す（銘柄指定なしの感想も含む）", () => {
+  it("全銘柄の感想を銘柄情報つきでフラットに返す（レシピ記載外の銘柄の感想も含む）", () => {
     const specified = makeFlour({
       reviews: [makeReview({ id: "rv-1", created_at: "2026-01-01T00:00:00Z" })],
     });
-    const unspecified = makeFlour({
-      link_status: "brand_unspecified",
-      brand: {
-        id: "brand-2",
-        maker: { id: "maker-1", name: "テスト製粉" },
-        product_name: "別の米粉",
-        has_gluten: false,
-        has_psyllium: false,
-        is_discontinued: false,
-      },
+    const unlisted = makeFlour({
+      brand: makeBrand({ id: "brand-2", product_name: "別の米粉" }),
       reviews: [makeReview({ id: "rv-2", created_at: "2026-02-01T00:00:00Z" })],
     });
-    const entries = getReviewEntries(makeRecipe([specified, unspecified]));
+    const entries = getReviewEntries(
+      makeRecipe([specified, unlisted], {
+        specified_flours: [makeSpecified()],
+      }),
+    );
     expect(entries.map((e) => e.review.id)).toEqual(["rv-2", "rv-1"]);
     expect(entries.map((e) => e.brand?.id)).toEqual(["brand-2", "brand-1"]);
   });
@@ -269,21 +353,97 @@ describe("getReviewEntries", () => {
 
 describe("getConfirmedBrandRecipes / getPossibleBrandRecipes", () => {
   const specified = makeBrandRecipe();
-  const visual = makeBrandRecipe({ link_status: "visually_identified" });
-  const unspecified = makeBrandRecipe({ link_status: "brand_unspecified" });
-  const rows = [specified, visual, unspecified];
+  const visual = makeBrandRecipe({ specified_source: "visual" });
+  const unlisted = makeBrandRecipe({ specified_source: null });
+  const rows = [specified, visual, unlisted];
 
-  it("「銘柄指定あり」「目視で確認可能」は作れるレシピとして返す", () => {
+  it("レシピに記載のある銘柄（本文指定・目視確認）は作れるレシピとして返す", () => {
     expect(getConfirmedBrandRecipes(rows)).toEqual([specified, visual]);
   });
 
-  it("「銘柄指定なし」（記載はないが作った実績がある）は作れるかも？レシピとして返す", () => {
-    expect(getPossibleBrandRecipes(rows)).toEqual([unspecified]);
+  it("記載はないが紐付けがあるものは作れるかも？レシピとして返す", () => {
+    expect(getPossibleBrandRecipes(rows)).toEqual([unlisted]);
   });
 
   it("該当がなければどちらも空配列", () => {
-    expect(getConfirmedBrandRecipes([unspecified])).toEqual([]);
+    expect(getConfirmedBrandRecipes([unlisted])).toEqual([]);
     expect(getPossibleBrandRecipes([specified, visual])).toEqual([]);
+  });
+});
+
+describe("mergeBrandRecipes（逆引きの 4.4 と 4.5 の和集合）", () => {
+  const recipeOf = (id: string, created_at = "2026-01-01T00:00:00Z") => ({
+    id,
+    title: `レシピ${id}`,
+    site_name: "テストサイト",
+    author_name: "テスト太郎",
+    status: "published",
+    created_at,
+    bread_type: null,
+  });
+
+  it("同じレシピの紐付けと記載行を1行にまとめる", () => {
+    const review = makeReview();
+    const rows = mergeBrandRecipes(
+      [{ result_memo: "メモ", reviews: [review], recipe: recipeOf("r-1") }],
+      [{ source: "text", recipe: recipeOf("r-1") }],
+    );
+    expect(rows).toEqual([
+      {
+        specified_source: "text",
+        result_memo: "メモ",
+        reviews: [review],
+        recipe: recipeOf("r-1"),
+      },
+    ]);
+  });
+
+  it("記載のみ（紐付けなし）のレシピも逆引きに含める", () => {
+    const rows = mergeBrandRecipes([], [
+      { source: "visual", recipe: recipeOf("r-1") },
+    ]);
+    expect(rows).toEqual([
+      {
+        specified_source: "visual",
+        result_memo: null,
+        reviews: [],
+        recipe: recipeOf("r-1"),
+      },
+    ]);
+  });
+
+  it("紐付けのみ（記載なし）は specified_source が null になる", () => {
+    const rows = mergeBrandRecipes(
+      [{ result_memo: null, reviews: [], recipe: recipeOf("r-1") }],
+      [],
+    );
+    expect(rows[0].specified_source).toBeNull();
+  });
+
+  it("公開中でないレシピとレシピ欠損行は除外する", () => {
+    const draft = { ...recipeOf("r-draft"), status: "draft" };
+    const rows = mergeBrandRecipes(
+      [
+        { result_memo: null, reviews: [], recipe: draft },
+        { result_memo: null, reviews: [], recipe: null },
+      ],
+      [{ source: "text", recipe: draft }],
+    );
+    expect(rows).toEqual([]);
+  });
+
+  it("新しいレシピ順に並べる", () => {
+    const rows = mergeBrandRecipes(
+      [
+        {
+          result_memo: null,
+          reviews: [],
+          recipe: recipeOf("r-old", "2026-01-01T00:00:00Z"),
+        },
+      ],
+      [{ source: "text", recipe: recipeOf("r-new", "2026-06-01T00:00:00Z") }],
+    );
+    expect(rows.map((r) => r.recipe?.id)).toEqual(["r-new", "r-old"]);
   });
 });
 

@@ -18,7 +18,6 @@ function makeFlour(
   brand: Partial<NonNullable<RecipeFlour["brand"]>> = {},
 ): RecipeFlour {
   return {
-    link_status: "brand_specified",
     result_memo: null,
     brand: {
       id: "brand-1",
@@ -48,6 +47,7 @@ function makeRecipe(overrides: Partial<Recipe> = {}): Recipe {
     created_at: "2026-01-01T00:00:00Z",
     bread_type: { id: "bt-1", name: "食パン" },
     flours: [makeFlour()],
+    specified_flours: [],
     ...overrides,
   };
 }
@@ -101,7 +101,6 @@ describe("filterRecipes", () => {
     const recipe = makeRecipe({
       flours: [
         {
-          link_status: "brand_specified",
           result_memo: null,
           brand: null,
           tags: [],
@@ -226,7 +225,7 @@ describe("filterBrandRecipesByBreadType", () => {
     id: string,
     breadType: { id: string; name: string } | null,
   ): BrandRecipe => ({
-    link_status: "brand_specified",
+    specified_source: "text",
     result_memo: null,
     reviews: [],
     recipe: {
