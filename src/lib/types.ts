@@ -1,5 +1,7 @@
 // docs/mvp/spec.md §4 のデータモデルに対応する表示用の型定義
 
+import { getGlossaryTerm, type GlossaryTermId } from "./glossary";
+
 export type BreadType = {
   id: string;
   name: string;
@@ -167,16 +169,25 @@ export type IngredientUsage = "used" | "unused" | "unknown";
 
 type RecipeIngredientKey = "uses_psyllium" | "uses_gluten" | "uses_oil";
 
-/** 表示する材料と順序。項目の追加はこの配列への追記だけで済ませる */
-const RECIPE_INGREDIENTS: { key: RecipeIngredientKey; label: string }[] = [
-  { key: "uses_psyllium", label: "サイリウム" },
-  { key: "uses_gluten", label: "グルテン" },
-  { key: "uses_oil", label: "油" },
+/**
+ * 表示する材料と順序。項目の追加はこの配列への追記だけで済ませる。
+ * 材料名は用語集に定義があるものを使い、表記をそちらに一本化する（issue #101）
+ */
+const RECIPE_INGREDIENTS: {
+  key: RecipeIngredientKey;
+  glossaryId: GlossaryTermId;
+}[] = [
+  { key: "uses_psyllium", glossaryId: "psyllium" },
+  { key: "uses_gluten", glossaryId: "gluten" },
+  { key: "uses_oil", glossaryId: "oil" },
 ];
 
 export type RecipeIngredientUsage = {
   key: RecipeIngredientKey;
+  /** 用語集の見出し語。表示名としてそのまま使える */
   label: string;
+  /** 用語の説明を引くためのID */
+  glossaryId: GlossaryTermId;
   usage: IngredientUsage;
 };
 
@@ -184,11 +195,12 @@ export type RecipeIngredientUsage = {
 export function getRecipeIngredientUsages(
   recipe: Pick<Recipe, RecipeIngredientKey>,
 ): RecipeIngredientUsage[] {
-  return RECIPE_INGREDIENTS.map(({ key, label }) => {
+  return RECIPE_INGREDIENTS.map(({ key, glossaryId }) => {
     const value = recipe[key];
     return {
       key,
-      label,
+      label: getGlossaryTerm(glossaryId).term,
+      glossaryId,
       usage: value === null ? "unknown" : value ? "used" : "unused",
     };
   });
