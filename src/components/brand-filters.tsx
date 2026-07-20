@@ -1,13 +1,13 @@
 "use client";
 
-// WBS 5.5: 銘柄一覧の絞り込み（グルテン／サイリウム）。
+// WBS 5.5 / issue #107: 銘柄一覧の絞り込み（メーカー／グルテン／サイリウム）。
 // レシピ一覧と同様、クライアント側で絞り込み、条件をURLクエリに同期する。
 // 絞り込みの判定ロジックは src/lib/filters.ts 側に置く。
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { filterBrands, type TriState } from "@/lib/filters";
-import type { FlourBrand } from "@/lib/types";
+import { getMakerName, type FlourBrand } from "@/lib/types";
 import { BrandList } from "./brand-list";
 
 const selectClass =
@@ -26,11 +26,21 @@ export function BrandFilters({ brands, reviewCounts }: Props) {
 
   const gluten = (searchParams.get("gluten") ?? "") as TriState;
   const psyllium = (searchParams.get("psyllium") ?? "") as TriState;
-  const hasFilter = gluten !== "" || psyllium !== "";
+  const maker = searchParams.get("maker") ?? "";
+  const hasFilter = gluten !== "" || psyllium !== "" || maker !== "";
+
+  // メーカーの選択肢は表示対象の銘柄から作り、日本語順に並べる
+  const makers = useMemo(
+    () =>
+      [...new Set(brands.map(getMakerName).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b, "ja"),
+      ),
+    [brands],
+  );
 
   const filtered = useMemo(
-    () => filterBrands(brands, { gluten, psyllium }),
-    [brands, gluten, psyllium],
+    () => filterBrands(brands, { gluten, psyllium, maker }),
+    [brands, gluten, psyllium, maker],
   );
 
   const updateParam = (key: string, value: string) => {
@@ -49,6 +59,21 @@ export function BrandFilters({ brands, reviewCounts }: Props) {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-amber-100 bg-white p-3">
+        <label className="flex items-center gap-2 text-sm text-stone-600">
+          メーカー
+          <select
+            className={selectClass}
+            value={maker}
+            onChange={(e) => updateParam("maker", e.target.value)}
+          >
+            <option value="">すべて</option>
+            {makers.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="flex items-center gap-2 text-sm text-stone-600">
           グルテン
           <select

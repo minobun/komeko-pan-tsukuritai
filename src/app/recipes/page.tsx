@@ -6,6 +6,12 @@ import { RecipeGrid } from "@/components/recipe-grid";
 import { getBreadTypes, getRecipes } from "@/lib/data";
 import { buildPageMetadata } from "@/lib/metadata";
 import { buildItemListSchema } from "@/lib/structured-data";
+import {
+  compareBrandsByName,
+  formatBrandName,
+  getSpecifiedBrands,
+  type RecipeBrand,
+} from "@/lib/types";
 
 export const revalidate = 300;
 
@@ -22,13 +28,16 @@ export default async function RecipesPage() {
     getBreadTypes(),
   ]);
 
-  const makers = Array.from(
-    new Set(
-      recipes.flatMap((recipe) =>
-        recipe.flours.flatMap((f) => (f.brand?.maker ? [f.brand.maker.name] : [])),
-      ),
-    ),
-  ).sort((a, b) => a.localeCompare(b, "ja"));
+  // 銘柄フィルタの選択肢は、カードと同じくレシピ本文に記載のある米粉から作る（issue #106/#109）
+  const brandById = new Map<string, RecipeBrand>();
+  for (const recipe of recipes) {
+    for (const brand of getSpecifiedBrands(recipe)) {
+      brandById.set(brand.id, brand);
+    }
+  }
+  const brands = [...brandById.values()]
+    .sort(compareBrandsByName)
+    .map((brand) => ({ id: brand.id, name: formatBrandName(brand) }));
 
   return (
     <div>
@@ -55,7 +64,7 @@ export default async function RecipesPage() {
           <RecipeFilters
             recipes={recipes}
             breadTypes={breadTypes}
-            makers={makers}
+            brands={brands}
           />
         </Suspense>
       </div>
