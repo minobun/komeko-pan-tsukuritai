@@ -5,7 +5,7 @@ import { env } from "./env";
 export const SITE_NAME = "米粉パンつくりたい";
 
 export const SITE_DESCRIPTION =
-  "米粉パンのレシピを「使っている米粉銘柄」から探せるまとめサイト。実食確認済みレシピと銘柄ごとの成分情報・逆引きレシピ一覧を掲載しています。";
+  "米粉パンのレシピを「使っている米粉銘柄」から探せるまとめサイト。運営者が試作済みのレシピと銘柄ごとの成分情報・逆引きレシピ一覧を掲載しています。";
 
 const FALLBACK_SITE_URL = "https://komeko-pan-tsukuritai.vercel.app";
 
