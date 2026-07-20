@@ -1,4 +1,5 @@
 import type { RecipeIngredientUsage } from "@/lib/types";
+import { GlossaryTerm } from "./glossary-term";
 
 const USAGE_STYLE: Record<
   RecipeIngredientUsage["usage"],
@@ -17,14 +18,16 @@ export function IngredientUsageList({
 }) {
   return (
     <ul className="mt-3 flex flex-wrap gap-2">
-      {usages.map(({ key, label, usage }) => {
+      {usages.map(({ key, glossaryId, usage }) => {
         const style = USAGE_STYLE[usage];
         return (
           <li
             key={key}
             className="inline-flex items-center gap-1.5 rounded-lg border border-amber-100 bg-white px-3 py-1.5 text-sm shadow-sm"
           >
-            <span className="text-stone-700">{label}</span>
+            <span className="text-stone-700">
+              <GlossaryTerm id={glossaryId} />
+            </span>
             <span
               className={`rounded-full px-2 py-0.5 text-xs font-medium ${style.className}`}
             >

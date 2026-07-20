@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { GlossaryTerm } from "@/components/glossary-term";
 import { JsonLd } from "@/components/json-ld";
 import { RecipeFilters } from "@/components/recipe-filters";
 import { RecipeGrid } from "@/components/recipe-grid";
@@ -40,7 +41,10 @@ export default async function RecipesPage() {
           })),
         )}
       />
-      <h1 className="text-2xl font-bold text-stone-900">米粉パンレシピ一覧</h1>
+      <h1 className="text-2xl font-bold text-stone-900">
+        <GlossaryTerm id="komeko" />
+        パンレシピ一覧
+      </h1>
       <p className="mt-2 text-sm text-stone-600">
         レシピはすべて外部サイトへのリンクです。銘柄の紐付けは運営者の独自調査（レシピ内の目視確認）によるものです。
       </p>

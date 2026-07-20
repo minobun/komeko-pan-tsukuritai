@@ -19,6 +19,7 @@ import {
   type SpecifiedFlour,
 } from "@/lib/types";
 import { describe, expect, it } from "vitest";
+import { getGlossaryTerm } from "@/lib/glossary";
 
 function makeBrandRecipe(overrides: Partial<BrandRecipe> = {}): BrandRecipe {
   return {
@@ -451,6 +452,18 @@ describe("getRecipeIngredientUsages", () => {
   it("サイリウム・グルテン・油をこの順で返す", () => {
     const usages = getRecipeIngredientUsages(makeRecipe([]));
     expect(usages.map((u) => u.label)).toEqual(["サイリウム", "グルテン", "油"]);
+  });
+
+  it("材料名は用語集の見出し語をそのまま使う（issue #101）", () => {
+    const usages = getRecipeIngredientUsages(makeRecipe([]));
+    expect(usages.map((u) => u.glossaryId)).toEqual([
+      "psyllium",
+      "gluten",
+      "oil",
+    ]);
+    for (const usage of usages) {
+      expect(usage.label).toBe(getGlossaryTerm(usage.glossaryId).term);
+    }
   });
 
   it("trueは「使用あり」、falseは「使用なし」として返す", () => {

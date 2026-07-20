@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { BrandFilters } from "@/components/brand-filters";
 import { BrandList } from "@/components/brand-list";
+import { GlossaryTerm } from "@/components/glossary-term";
 import { JsonLd } from "@/components/json-ld";
 import { getBrandReviewCounts, getFlourBrands } from "@/lib/data";
 import { buildPageMetadata } from "@/lib/metadata";
@@ -33,7 +34,10 @@ export default async function BrandsPage() {
           })),
         )}
       />
-      <h1 className="text-2xl font-bold text-stone-900">米粉銘柄一覧</h1>
+      <h1 className="text-2xl font-bold text-stone-900">
+        <GlossaryTerm id="komeko" />
+        銘柄一覧
+      </h1>
       <p className="mt-2 text-sm text-stone-600">
         銘柄ごとの成分情報と、その銘柄で作れるレシピの逆引きを掲載しています。
       </p>

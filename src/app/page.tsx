@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BrandCard } from "@/components/brand-card";
+import { GlossaryTerm } from "@/components/glossary-term";
 import { JsonLd } from "@/components/json-ld";
 import { RecipeCard } from "@/components/recipe-card";
 import { getFeaturedBrands, getLatestRecipes } from "@/lib/data";
@@ -50,7 +51,9 @@ export default async function Home() {
             長文をベタで折り返すと意味の切れ目と改行位置がずれて読みにくい */}
         <div className="mt-4 max-w-2xl space-y-1.5 text-sm leading-relaxed text-amber-50 sm:text-base">
           <p>
-            米粉はメーカー・銘柄によって吸水率などの性質が異なり、同じレシピでも米粉パンの仕上がりが変わります。
+            米粉はメーカー・銘柄によって
+            <GlossaryTerm id="water_absorption" />
+            などの性質が異なり、同じレシピでも米粉パンの仕上がりが変わります。
           </p>
           <p>
             当サイトは、レシピと「実際に使われている米粉銘柄」の紐付けを運営者の独自調査（レシピ内の目視確認）でまとめたリンク集です。

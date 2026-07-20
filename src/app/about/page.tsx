@@ -1,11 +1,12 @@
 import { BakedBadge } from "@/components/baked-badge";
 import { SpecifiedFlourBadge } from "@/components/specified-flour-badge";
+import { GLOSSARY_TERMS } from "@/lib/glossary";
 import { buildPageMetadata } from "@/lib/metadata";
 import { CONTACT_FORM_URL, SITE_NAME } from "@/lib/site";
 
 export const metadata = buildPageMetadata({
   title: "About・運営ポリシー",
-  description: `${SITE_NAME}の運営ポリシー。掲載情報の調査方法、著作権の考え方、削除依頼・お問い合わせ窓口、広告表記について。`,
+  description: `${SITE_NAME}の運営ポリシー。掲載情報の調査方法、著作権の考え方、削除依頼・お問い合わせ窓口、広告表記について。米粉・吸水率・サイリウムなど米粉パンの用語集も掲載しています。`,
   path: "/about",
 });
 
@@ -67,6 +68,23 @@ export default function AboutPage() {
             リンク切れは定期的にチェックしていますが、リンク先の内容・価格等は変更されている場合があります。
           </li>
         </ul>
+      </section>
+
+      <section className="mt-8">
+        <h2 className="text-lg font-bold text-stone-900">用語集</h2>
+        <p className="mt-2 text-sm leading-relaxed text-stone-700">
+          当サイトで使っている米粉パンの用語です。各ページでは、これらの用語に下線が引かれている箇所をタップすると同じ説明を確認できます。
+        </p>
+        <dl className="mt-4 space-y-4">
+          {GLOSSARY_TERMS.map((term) => (
+            <div key={term.id}>
+              <dt className="text-sm font-bold text-stone-900">{term.term}</dt>
+              <dd className="mt-1 text-sm leading-relaxed text-stone-700">
+                {term.description}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       <section className="mt-8">
