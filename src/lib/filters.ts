@@ -3,7 +3,7 @@
 // 判定ロジックだけをここに置いてユニットテスト可能にする。
 
 import {
-  getRecipeBrands,
+  getSpecifiedBrands,
   isGlutenFree,
   type BrandRecipe,
   type FlourBrand,
@@ -12,31 +12,38 @@ import {
 } from "./types";
 
 export type RecipeFilterCondition = {
-  /** メーカー名。空文字は「すべて」 */
-  maker: string;
+  /** 銘柄ID。空文字は「すべて」。レシピ本文に記載のある米粉で判定する（issue #109） */
+  brandId: string;
   /** パン種別名。空文字は「すべて」 */
   breadType: string;
   glutenFreeOnly: boolean;
   /** サイリウム不使用（uses_psylliumがfalse）のみ。null（未確認）は含めない */
   psylliumFreeOnly: boolean;
+  /** 油不使用（uses_oilがfalse）のみ。null（未確認）は含めない */
+  oilFreeOnly: boolean;
+  /** レシピ本文に銘柄の記載があるレシピ（specified_floursが1件以上）のみ */
+  specifiedOnly: boolean;
 };
 
 export function matchesRecipeFilter(
   recipe: Recipe,
   cond: RecipeFilterCondition,
 ): boolean {
-  // 記載・紐付けのどちらかにそのメーカーの銘柄があればヒットさせる（issue #94）
+  // カードが出す米粉（記載のある米粉）と絞り込みの対象を揃える。紐付けだけの
+  // 銘柄で絞ると「一致したのにカードに出ない」ことになるため（issue #109）
   if (
-    cond.maker &&
-    !getRecipeBrands(recipe).some((b) => b.maker?.name === cond.maker)
+    cond.brandId &&
+    !getSpecifiedBrands(recipe).some((b) => b.id === cond.brandId)
   ) {
     return false;
   }
+  if (cond.specifiedOnly && recipe.specified_flours.length === 0) return false;
   if (cond.breadType && recipe.bread_type?.name !== cond.breadType) {
     return false;
   }
   if (cond.glutenFreeOnly && !isGlutenFree(recipe)) return false;
   if (cond.psylliumFreeOnly && recipe.uses_psyllium !== false) return false;
+  if (cond.oilFreeOnly && recipe.uses_oil !== false) return false;
   return true;
 }
 
@@ -77,6 +84,8 @@ export function filterBrandRecipesByBreadType(
 export type BrandFilterCondition = {
   gluten: TriState;
   psyllium: TriState;
+  /** メーカー名。空文字は「すべて」（issue #107） */
+  maker: string;
 };
 
 export function filterBrands(
@@ -86,6 +95,7 @@ export function filterBrands(
   return brands.filter(
     (brand) =>
       matchesTriState(cond.gluten, brand.has_gluten) &&
-      matchesTriState(cond.psyllium, brand.has_psyllium),
+      matchesTriState(cond.psyllium, brand.has_psyllium) &&
+      (cond.maker === "" || brand.maker?.name === cond.maker),
   );
 }

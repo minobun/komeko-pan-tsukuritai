@@ -74,11 +74,31 @@ function makeBrand(overrides: Partial<FlourBrand> = {}): FlourBrand {
 }
 
 const noFilter = {
-  maker: "",
+  brandId: "",
   breadType: "",
   glutenFreeOnly: false,
   psylliumFreeOnly: false,
+  oilFreeOnly: false,
+  specifiedOnly: false,
 };
+
+/** レシピ本文に記載された米粉（recipe_specified_flours）の1件を作る */
+function makeSpecified(
+  brandId: string,
+  source: "text" | "visual" = "text",
+): Recipe["specified_flours"][number] {
+  return {
+    source,
+    brand: {
+      id: brandId,
+      maker: { id: "maker-1", name: "テスト製粉" },
+      product_name: brandId,
+      has_gluten: false,
+      has_psyllium: false,
+      is_discontinued: false,
+    },
+  };
+}
 
 describe("filterRecipes", () => {
   it("条件がすべて空なら全件返す", () => {
@@ -86,29 +106,52 @@ describe("filterRecipes", () => {
     expect(filterRecipes(recipes, noFilter)).toEqual(recipes);
   });
 
-  it("メーカー名が一致する銘柄を使うレシピだけ残す", () => {
+  it("指定した銘柄がレシピ本文に記載されたレシピだけ残す", () => {
     const target = makeRecipe({
       id: "recipe-2",
-      flours: [makeFlour({ maker: { id: "maker-2", name: "波里" } })],
+      specified_flours: [makeSpecified("brand-9")],
     });
     const recipes = [makeRecipe(), target];
-    expect(filterRecipes(recipes, { ...noFilter, maker: "波里" })).toEqual([
-      target,
-    ]);
+    expect(filterRecipes(recipes, { ...noFilter, brandId: "brand-9" })).toEqual(
+      [target],
+    );
   });
 
-  it("brandがnullの行はメーカー判定でエラーにならず除外される", () => {
-    const recipe = makeRecipe({
-      flours: [
-        {
-          result_memo: null,
-          brand: null,
-          tags: [],
-          reviews: [],
-        },
-      ],
+  it("紐付けだけで本文に記載のない銘柄では、その銘柄フィルタに一致しない（#109）", () => {
+    // カードは記載のある米粉しか出さないので、絞り込みも記載ベースに揃える
+    const linkedOnly = makeRecipe({
+      flours: [makeFlour({ id: "brand-9" })],
+      specified_flours: [],
     });
-    expect(filterRecipes([recipe], { ...noFilter, maker: "波里" })).toEqual([]);
+    expect(
+      filterRecipes([linkedOnly], { ...noFilter, brandId: "brand-9" }),
+    ).toEqual([]);
+  });
+
+  it("銘柄特定済みのみ指定で、本文に銘柄の記載があるレシピだけ残す", () => {
+    const specified = makeRecipe({
+      id: "recipe-2",
+      specified_flours: [makeSpecified("brand-1")],
+    });
+    const notSpecified = makeRecipe({ id: "recipe-3", specified_flours: [] });
+    expect(
+      filterRecipes([specified, notSpecified], {
+        ...noFilter,
+        specifiedOnly: true,
+      }),
+    ).toEqual([specified]);
+  });
+
+  it("油なし指定でuses_oilがfalseのレシピだけ残す（未確認は含めない）", () => {
+    const without = makeRecipe({ id: "recipe-2", uses_oil: false });
+    const withOil = makeRecipe({ id: "recipe-3", uses_oil: true });
+    const unknown = makeRecipe(); // uses_oil: null（未確認）
+    expect(
+      filterRecipes([without, withOil, unknown], {
+        ...noFilter,
+        oilFreeOnly: true,
+      }),
+    ).toEqual([without]);
   });
 
   it("パン種別名で絞り込める（bread_typeがnullのレシピは除外）", () => {
@@ -151,19 +194,19 @@ describe("filterRecipes", () => {
   it("複数条件はAND（すべて満たすレシピのみ残る）", () => {
     const match = makeRecipe({
       id: "recipe-2",
-      flours: [makeFlour({ maker: { id: "maker-2", name: "波里" } })],
+      specified_flours: [makeSpecified("brand-9")],
     });
-    const makerOnly = makeRecipe({
+    const breadTypeMismatch = makeRecipe({
       id: "recipe-3",
       bread_type: { id: "bt-2", name: "丸パン" },
-      flours: [makeFlour({ maker: { id: "maker-2", name: "波里" } })],
+      specified_flours: [makeSpecified("brand-9")],
     });
     expect(
-      filterRecipes([match, makerOnly, makeRecipe()], {
-        maker: "波里",
+      filterRecipes([match, breadTypeMismatch, makeRecipe()], {
+        ...noFilter,
+        brandId: "brand-9",
         breadType: "食パン",
         glutenFreeOnly: true,
-        psylliumFreeOnly: false,
       }),
     ).toEqual([match]);
   });
@@ -258,20 +301,42 @@ describe("filterBrands", () => {
   const withPsyllium = makeBrand({ id: "brand-3", has_psyllium: true });
   const brands = [glutenFree, withGluten, withPsyllium];
 
+  const noBrandFilter = { gluten: "", psyllium: "", maker: "" } as const;
+
   it("条件がすべて空なら全件返す", () => {
-    expect(filterBrands(brands, { gluten: "", psyllium: "" })).toEqual(brands);
+    expect(filterBrands(brands, noBrandFilter)).toEqual(brands);
   });
 
   it("グルテンフリー（without）で絞り込める", () => {
-    expect(filterBrands(brands, { gluten: "without", psyllium: "" })).toEqual([
-      glutenFree,
-      withPsyllium,
-    ]);
+    expect(
+      filterBrands(brands, { ...noBrandFilter, gluten: "without" }),
+    ).toEqual([glutenFree, withPsyllium]);
   });
 
   it("グルテンとサイリウムの条件はAND", () => {
     expect(
-      filterBrands(brands, { gluten: "without", psyllium: "with" }),
+      filterBrands(brands, {
+        ...noBrandFilter,
+        gluten: "without",
+        psyllium: "with",
+      }),
     ).toEqual([withPsyllium]);
+  });
+
+  it("メーカー名で絞り込める（issue #107）", () => {
+    const nami = makeBrand({
+      id: "brand-9",
+      maker: { id: "maker-2", name: "波里" },
+    });
+    expect(
+      filterBrands([...brands, nami], { ...noBrandFilter, maker: "波里" }),
+    ).toEqual([nami]);
+  });
+
+  it("makerがnullの銘柄はメーカー指定時に除外され、エラーにならない", () => {
+    const noMaker = makeBrand({ id: "brand-9", maker: null });
+    expect(
+      filterBrands([...brands, noMaker], { ...noBrandFilter, maker: "波里" }),
+    ).toEqual([]);
   });
 });
