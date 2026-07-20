@@ -55,7 +55,7 @@ export default function AboutPage() {
             <span className="mr-1 inline-flex align-middle">
               <BakedBadge />
             </span>
-            は運営者が実際にその銘柄で焼いて確認し、感想を掲載しているものです。
+            は運営者が実際にその銘柄で試作し、感想を掲載しているものです。
           </li>
           <li>
             メーカー名・商品名は事実の参照として記載しており、各メーカーとの提携・公認関係はありません。

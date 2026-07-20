@@ -8,7 +8,7 @@ export const alt = `${SITE_NAME}｜米粉の銘柄からレシピを探す`;
 
 const HEADLINE = "米粉の銘柄から、";
 const HEADLINE2 = "パンのレシピを探す。";
-const CAPTION = "実食確認済みのレシピと銘柄ごとの成分情報";
+const CAPTION = "運営者が試作済みのレシピと銘柄ごとの成分情報";
 
 /**
  * satoriはwoff2非対応で、next/font経由のフォントも取り出せないため、
