@@ -6,11 +6,11 @@ const SOURCE_BADGES: Record<
   { label: string; className: string }
 > = {
   text: {
-    label: "銘柄指定",
+    label: "レシピに銘柄記載",
     className: "border-amber-200 bg-amber-50 text-amber-900",
   },
   visual: {
-    label: "目視確認",
+    label: "写真から銘柄確認",
     className: "border-stone-300 bg-white text-stone-500",
   },
 };

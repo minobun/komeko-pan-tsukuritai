@@ -248,6 +248,42 @@ export function getListedFlours(
   });
 }
 
+/** 重複する銘柄を、最初に現れた順序を保ったまま1件にまとめる */
+function uniqueBrands(brands: RecipeBrand[]): RecipeBrand[] {
+  return brands.filter(
+    (brand, i) => brands.findIndex((b) => b.id === brand.id) === i,
+  );
+}
+
+/**
+ * レシピ本文に記載のある米粉（4.5）だけを重複なく返す。
+ *
+ * 一覧のカードはこれを使う。4.4 の紐付けは「この米粉でも作れる」という運営者の
+ * 判断を含み、レシピが指定した米粉ではないため、一覧に混ぜると誤解を招く（issue #109）。
+ */
+export function getSpecifiedBrands(
+  recipe: Pick<Recipe, "specified_flours">,
+): RecipeBrand[] {
+  return uniqueBrands(
+    recipe.specified_flours.flatMap((f) => (f.brand ? [f.brand] : [])),
+  );
+}
+
+/** バッジの表示順。根拠の追加はこの配列への追記だけで済ませる */
+const SPECIFIED_FLOUR_SOURCES: SpecifiedFlourSource[] = ["text", "visual"];
+
+/**
+ * レシピが持つ記載根拠を重複なく返す（issue #104）。
+ * 同じ根拠の銘柄が何件あってもバッジは1つでよく、並び順も記載内容で揺れないようにする。
+ */
+export function getSpecifiedSources(
+  recipe: Pick<Recipe, "specified_flours">,
+): SpecifiedFlourSource[] {
+  return SPECIFIED_FLOUR_SOURCES.filter((source) =>
+    recipe.specified_flours.some((f) => f.source === source),
+  );
+}
+
 /**
  * レシピに関係する銘柄（記載＋紐付け）を重複なく返す。
  * メタデータ・構造化データ・絞り込みなど「このレシピの銘柄」を扱う箇所で使う。
@@ -255,11 +291,10 @@ export function getListedFlours(
 export function getRecipeBrands(
   recipe: Pick<Recipe, "flours" | "specified_flours">,
 ): RecipeBrand[] {
-  const brands = [...recipe.specified_flours, ...recipe.flours].flatMap((f) =>
-    f.brand ? [f.brand] : [],
-  );
-  return brands.filter(
-    (brand, i) => brands.findIndex((b) => b.id === brand.id) === i,
+  return uniqueBrands(
+    [...recipe.specified_flours, ...recipe.flours].flatMap((f) =>
+      f.brand ? [f.brand] : [],
+    ),
   );
 }
 

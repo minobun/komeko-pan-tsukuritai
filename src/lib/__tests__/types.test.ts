@@ -9,6 +9,8 @@ import {
   getRecipeBrands,
   getRecipeIngredientUsages,
   getReviewEntries,
+  getSpecifiedBrands,
+  getSpecifiedSources,
   hasBakedReview,
   isGlutenFree,
   mergeBrandRecipes,
@@ -295,6 +297,67 @@ describe("getListedFlours", () => {
         reviews: [],
       },
     ]);
+  });
+});
+
+describe("getSpecifiedBrands", () => {
+  it("レシピ本文に記載のある米粉だけを返す（issue #109）", () => {
+    const listed = makeBrand({ id: "listed", product_name: "記載の米粉" });
+    const linkedOnly = makeBrand({ id: "linked", product_name: "紐付けだけ" });
+    const recipe = makeRecipe([makeFlour({ brand: linkedOnly })], {
+      specified_flours: [makeSpecified({ brand: listed })],
+    });
+
+    expect(getSpecifiedBrands(recipe).map((b) => b.id)).toEqual(["listed"]);
+  });
+
+  it("運営者が独自に紐付けただけの米粉は含めない", () => {
+    const recipe = makeRecipe([makeFlour()], { specified_flours: [] });
+    expect(getSpecifiedBrands(recipe)).toEqual([]);
+  });
+
+  it("同じ銘柄が複数記載されていても1件にまとめる", () => {
+    const recipe = makeRecipe([], {
+      specified_flours: [
+        makeSpecified({ source: "text" }),
+        makeSpecified({ source: "visual" }),
+      ],
+    });
+    expect(getSpecifiedBrands(recipe)).toHaveLength(1);
+  });
+
+  it("銘柄を取得できていない記載行は除外する", () => {
+    const recipe = makeRecipe([], {
+      specified_flours: [makeSpecified({ brand: null })],
+    });
+    expect(getSpecifiedBrands(recipe)).toEqual([]);
+  });
+});
+
+describe("getSpecifiedSources", () => {
+  it("記載根拠を重複なく返す（issue #104）", () => {
+    const recipe = makeRecipe([], {
+      specified_flours: [
+        makeSpecified({ source: "text", brand: makeBrand({ id: "a" }) }),
+        makeSpecified({ source: "text", brand: makeBrand({ id: "b" }) }),
+        makeSpecified({ source: "visual", brand: makeBrand({ id: "c" }) }),
+      ],
+    });
+    expect(getSpecifiedSources(recipe)).toEqual(["text", "visual"]);
+  });
+
+  it("根拠の並び順は記載内容によらず一定にする", () => {
+    const recipe = makeRecipe([], {
+      specified_flours: [
+        makeSpecified({ source: "visual", brand: makeBrand({ id: "a" }) }),
+        makeSpecified({ source: "text", brand: makeBrand({ id: "b" }) }),
+      ],
+    });
+    expect(getSpecifiedSources(recipe)).toEqual(["text", "visual"]);
+  });
+
+  it("記載がなければ空になる", () => {
+    expect(getSpecifiedSources(makeRecipe([makeFlour()]))).toEqual([]);
   });
 });
 
